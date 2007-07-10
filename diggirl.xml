@@ -1,39 +1,74 @@
 <?xml version="1.0" encoding="UTF-8" ?> 
 <Module>
-	<ModulePrefs title="diggirl.net">
-		<Require feature="dynamic-height"/>
+	<ModulePrefs title="diggirl.net" directory_title="photo" 
+		title_url="http://www.diggirl.net/" description="gadget for diggirl.net" 
+		author="Phenix Yu" author_email="phenix.yu+gadget@gmail.com" 
+		author_affiliation="NCTU, Taiwan" author_location="Taipei, Taiwan"
+		author_link="http://phenixyu.blogspot.com" >
+		<Require feature="tabs"/>
+		<Require feature="setprefs"/>
 		<Require feature="minimessage"/>
+		<Require feature="dynamic-height"/>
 	</ModulePrefs>
+	<UserPref name="selectedTab" datatype="hidden"/>
 	<Content type="html">
 	<![CDATA[ 
-		<div id="messageBox"></div>
+		<div id="message"></div>
 		<div id="content"></div>
+
 		<script type="text/javascript">
-		function rssCallback(feed) {
-			if (feed == null) { 
+		// Global variables
+		//var prefs= new _IG_Prefs(__MODULE_ID__);
+		var tabs = new _IG_Tabs (__MODULE_ID__);
+		var msg  = new _IG_MiniMessage(__MODULE_ID__, _gel("message"));
+		
+		msg.createDismissibleMessage("Please close me when you're done reading me.");
+
+		function timeCallback(tabId) {
+			var date = new Date(); 
+			_gel(tabId).innerHTML = date.toLocaleString();
+		}
+
+		function GeneratorCB(feedEntry) { return function(tabId) { EntryCB(tabId, feedEntry); } }
+
+		function EntryCB(tabId, feedEntry) {
+			var container = _gel(tabId);
+			
+			// Display loading message before fetching feed.
+			container.innerHTML = '<div>Loading...</div>';
+
+			// Start building HTML string that will be displayed in gadget.
+			var html = "<table border='0' cellpadding='0' cellspacing='16'>";
+			for (var i = 0; i < feedEntry.length; i+=2) {
+				var entry = feedEntry[i];
+				html += '<tr>';
+				html += "<td align='center'><a target='_blank' href='" + entry.Link + "'>";
+				html += entry.Summary + '<br>' + entry.Title + '</a></td>';
+				entry = feedEntry[i+1];
+				html += "<td align='center'><a target='_blank' href='" + entry.Link + "'>";
+				html += entry.Summary + '<br>' + entry.Title + '</a></td>';
+				html += '</tr>';
+			}
+			container.innerHTML = html;
+			
+			// Resize iframe height to fit content.
+			_IG_AdjustIFrameHeight();
+		}
+
+		function FeedCB(feed) {		
+			if (feed.ErrorMsg) {
 				alert("There is no data.");
 				return;
 			}
-			// Start building HTML string that will be displayed in gadget.
-			var html = "";
-			// Access the fields in the feed
-			html += "<div><b>" + feed.Title + "</b></div>";
-			// Access the data for a given entry
-			if (feed.Entry) {
-				for (var i = 0; i < feed.Entry.length; i++) {
-					html += "<div>"
-					html += feed.Entry[i].Summary;
-					html += "<br><a target='_blank' href='" + feed.Entry[i].Link + "'>"
-					+ feed.Entry[i].Title
-					+ "</a> ";
-					html += "</div>";
-				}
-			}
-			_gel("content").innerHTML = html;
-		}
-		// The rest of the function parameters, which are optional: the number
-		// of entries to return, and whether to return summaries.
-		_IG_FetchFeedAsJSON("http://diggirl.net/hottodayrss.jsp", rssCallback, 5, true);
+			var title = feed.Title;
+			if (feed.Title.length > 11) title = feed.Title.substr(11);
+			tabs.addDynamicTab(title, GeneratorCB(feed.Entry));
+		}	
+
+		_IG_FetchFeedAsJSON("http://diggirl.net/hottodayrss.jsp", FeedCB, 6, true);
+		_IG_FetchFeedAsJSON("http://diggirl.net/newrss.jsp", FeedCB, 6, true);
+		_IG_AdjustIFrameHeight();
+		
   		</script>
 	]]> 
 	</Content>
