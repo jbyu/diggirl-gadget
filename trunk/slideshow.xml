@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<Module>
+	<ModulePrefs title="test">
+		<Require feature="dynamic-height"/>
+		<Require feature="minimessage"/>
+	</ModulePrefs>
+	<Content type="html">
+	<![CDATA[ 
+<script type="text/javascript"
+src="http://www.diggirl.net/diggirl/servletJS/slideShow.js?maxPics=100&slideShowSpeed=2000&mode=album&albumID=258326&slideShowImgName=diggirl_album_img_258326&slideShowHyperLinkID=diggirl_album_link_258326"></script>
+<table width="180" height="140" border="0" cellpadding="0" cellspacing="0">
+<tr><td align="center" valign="middle">
+<a href="http://www.diggirl.net/"><img src="http://www.diggirl.net/diggirl/img/slide/bg_head.gif" 
+border="0"></a></td></tr>
+<tr><td align="center" valign="middle" 
+background="http://www.diggirl.net/diggirl/img/slide/bg_photo.gif" width="180" height="145">
+<a id="diggirl_album_link_258326" href="http://www.diggirl.net/diggirl">
+<img src="http://www.diggirl.net/img/load.gif" border="0" name="diggirl_album_img_258326"></a></td></tr>
+<tr><td align="center" valign="middle"><a href="http://www.diggirl.net/">
+<img src="http://www.diggirl.net/diggirl/img/slide/bg_bottom.gif" border="0" 
+width="180" height="11"></a></td></tr></table>
+	]]> 
+	</Content>
+</Module>

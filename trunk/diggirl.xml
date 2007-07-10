@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<Module>
+	<ModulePrefs title="diggirl.net">
+		<Require feature="dynamic-height"/>
+		<Require feature="minimessage"/>
+	</ModulePrefs>
+	<Content type="html">
+	<![CDATA[ 
+		<div id="messageBox"></div>
+		<div id="content"></div>
+		<script type="text/javascript">
+		function rssCallback(feed) {
+			if (feed == null) { 
+				alert("There is no data.");
+				return;
+			}
+			// Start building HTML string that will be displayed in gadget.
+			var html = "";
+			// Access the fields in the feed
+			html += "<div><b>" + feed.Title + "</b></div>";
+			// Access the data for a given entry
+			if (feed.Entry) {
+				for (var i = 0; i < feed.Entry.length; i++) {
+					html += "<div>"
+					html += feed.Entry[i].Summary;
+					html += "<br><a target='_blank' href='" + feed.Entry[i].Link + "'>"
+					+ feed.Entry[i].Title
+					+ "</a> ";
+					html += "</div>";
+				}
+			}
+			_gel("content").innerHTML = html;
+		}
+		// The rest of the function parameters, which are optional: the number
+		// of entries to return, and whether to return summaries.
+		_IG_FetchFeedAsJSON("http://diggirl.net/hottodayrss.jsp", rssCallback, 5, true);
+  		</script>
+	]]> 
+	</Content>
+</Module>
