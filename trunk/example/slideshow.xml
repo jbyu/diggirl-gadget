@@ -1,0 +1,718 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Module>
+    <ModulePrefs
+        title="__MSG_title__"
+        directory_title="Google SlideShow"
+        title_url="http://www.google.com/uds/solutions/slideshow/index.html"
+        description="__MSG_description__"
+        author="Derek C."
+        author_affiliation="Google Inc."
+        author_location="Atherton, CA"
+        author_email="DerekC.Feedback+Slideshow@gmail.com"
+	screenshot="/ig/modules/slideshow.png"
+	thumbnail="/ig/modules/slideshow-thm.png"
+        scrolling="false"
+        scaling="false"
+        height="250"
+        singleton="false"
+        category="tools"
+        category2="funandgames"
+     >
+     <Locale messages="slideshow_content/ALL_ALL.xml"/>
+     <Locale lang="en" messages="slideshow_content/en_ALL.xml"/>
+
+     <Require feature="google-domain"/>
+     <Require feature="setprefs"/>
+     <Require feature="settitle"/>
+
+    </ModulePrefs>
+    <UserPref
+      name="type"
+      display_name="__MSG_ss_type__"
+      datatype="enum"
+      default_value="2"> 
+    <EnumValue value="0" display_value="__MSG_ss_type_pwa__"/>
+    <EnumValue value="1" display_value="__MSG_ss_type_tag__"/>
+    <EnumValue value="2" display_value="__MSG_ss_type_feed__"/>
+    </UserPref>
+    <UserPref
+      name="title"
+      display_name="__MSG_ss_title__"
+      datatype="string"
+      default_value="__MSG_ss_title_default__"
+      />
+    <UserPref
+      name="user"
+      display_name="__MSG_ss_picasa_user__"
+      datatype="string"
+      />
+    <UserPref
+      name="album"
+      display_name="__MSG_ss_picasa_album__"
+      datatype="enum"
+      default_value="0"> 
+    <EnumValue value="0" display_value="Google Logos"/>
+    <EnumValue value="1" display_value="Digital Blasphemy"/>
+    </UserPref>
+    <UserPref
+      name="feed"
+      display_name="__MSG_ss_feed__"
+      datatype="string"
+      default_value="http://www.google.com/uds/solutions/slideshow/sample.rss"
+      />
+    <UserPref
+      name="tag"
+      display_name="__MSG_ss_tag__"
+      datatype="string"
+      default_value="Sunsets"
+      />
+    <UserPref
+      name="bgcolor"
+      display_name="__MSG_ss_bgcolor__"
+      datatype="enum"
+      default_value="ifl"> 
+    <EnumValue value="black" display_value="__MSG_ss_color_black__"/>
+    <EnumValue value="white" display_value="__MSG_ss_color_white__"/>
+    <EnumValue value="blue" display_value="__MSG_ss_color_blue__"/>
+    <EnumValue value="green" display_value="__MSG_ss_color_green__"/>
+    <EnumValue value="orange" display_value="__MSG_ss_color_orange__"/>
+    <EnumValue value="pink" display_value="__MSG_ss_color_pink__"/>
+    <EnumValue value="purple" display_value="__MSG_ss_color_purple__"/>
+    <EnumValue value="red" display_value="__MSG_ss_color_red__"/>
+    <EnumValue value="yellow" display_value="__MSG_ss_color_yellow__"/>
+    <EnumValue value="ifl" display_value="__MSG_ss_color_ifl__"/>
+    </UserPref>
+    <UserPref
+      name="size"
+      display_name="__MSG_ss_size__"
+      datatype="enum"
+      default_value="large"> 
+    <EnumValue value="small" display_value="__MSG_ss_size_small__"/>
+    <EnumValue value="medium" display_value="__MSG_ss_size_medium__"/>
+    <EnumValue value="large" display_value="__MSG_ss_size_large__"/>
+    </UserPref>
+    <UserPref
+      name="displaytime"
+      display_name="__MSG_ss_time__"
+      datatype="string"
+      default_value="3"
+      />
+
+<Content type="html-inline"> <![CDATA[
+
+  <script src="http://www.google.com/jsapi?key=internal-ig-slideshow"
+    type="text/javascript"></script>
+  <script src="http://www.google.com/uds/loader?file=feeds&v=1"
+    type="text/javascript"></script>
+  <script src="http://www.google.com/uds/solutions/slideshow/gfslideshow.js"
+    type="text/javascript"></script>
+
+  <style type="text/css">
+    .loading__MODULE_ID__ {
+      width: 100%;
+      padding-top: 10px;
+      font-size : 14px;
+      text-align : center;
+      color : #cccccc;
+    }
+
+    .slideshow__MODULE_ID__ {
+      width : 288px;
+      height: 216px;
+      padding: 10px;
+      margin-left : auto;
+      margin-right : auto;
+      font-size : 12px;
+      margin-top : 1em;
+    }
+    .slideshow__MODULE_ID__ a img {border : none;}
+
+  </style>
+
+  <script type="text/javascript">
+
+    function OnLoad__MODULE_ID__() {
+      new ssbg__MODULE_ID__();
+    }
+    _IG_RegisterOnloadHandler(OnLoad__MODULE_ID__);
+
+    ssbg__MODULE_ID__.DEFAULTFEED = "http://www.google.com/uds/solutions/slideshow/sample.rss";
+    ssbg__MODULE_ID__.DEFAULTUSER = "dlc0421";
+
+    ssbg__MODULE_ID__.prefid = "m___MODULE_ID___";
+
+    function ssbg__MODULE_ID__() {
+      // Browser fun..
+      if (window.ActiveXObject) this.ie = this[window.XMLHttpRequest ? 'ie7' : 'ie6'] = true;
+      else if (document.childNodes && !document.all && !navigator.taintEnabled) this.safari = true;
+      else if (document.getBoxObjectFor != null) this.gecko = true;
+
+      this.grabThemeColors();
+      this.initPrefs();
+      this.checkPWA();
+    }
+
+    ssbg__MODULE_ID__.prototype.checkPWA = function(msg) {
+      // For loading up correct album selection.
+      this.firstPWALoad = true;	
+
+      // Check to see if this is first use case and try to load users albums
+      // if they exist..
+      var user = this.prefs.getString("user");
+      if (!user) {
+	// Try to see if we can find the users public albums. If not default back to a
+        // known user.
+	var guser = ssbg__MODULE_ID__.getUserName();
+	if (guser) {
+	  this.loadAlbumList(guser);
+        } else {
+	  this.setDefaultPWA();
+        }
+      }
+    }
+
+    ssbg__MODULE_ID__.prototype.showActionHint = function(msg) {
+      var inner = '<div class="loading__MODULE_ID__" style="color:' + this.theme.fg + '">' + msg + '</div>';
+      this.ssDiv().innerHTML = inner;
+    }
+
+    ssbg__MODULE_ID__.prototype.initPrefs = function() {
+      this.prefs =  null;
+      this.prefs =  new _IG_Prefs(__MODULE_ID__);
+
+      this.setSize(this.prefs.getString("size"));
+      this.setBgColor(this.prefs.getString("bgcolor"));
+
+      this.showActionHint('__MSG_loading__');
+
+      this.setTitle(this.prefs.getString("title"));
+
+      // Hook the preferences ui.
+      this.hookPrefsUI();
+
+      // Load up the correct show..
+      this.doShow(parseInt(this.prefs.getString("type")));
+    }
+
+    ssbg__MODULE_ID__.prototype.feedFromTag = function(tag) {
+      tag = tag || "Sunsets";
+      tag = tag.toLowerCase();
+      tag = tag.replace(/,+/g, ' ');
+      tag = tag.replace(/ +/g, '+');
+      this.tag = tag;
+      var feed = "http://feed.photobucket.com/images/" + tag + "/feed.rss";
+      return feed;
+    }
+
+    ssbg__MODULE_ID__.prototype.doShow = function(type) {
+      if (type == 0) { // PWA
+        // Load the album list
+        var newuser = this.getUserInput();
+        this.loadAlbumList(newuser);
+      } else if (type == 1) { // TAG
+        var feed = this.feedFromTag(this.prefs.getString("tag"));
+        this.createSlideShow(feed);
+      } else { // FEED
+        var feed = this.prefs.getString("feed");
+        feed = feed || ssbg__MODULE_ID__.DEFAULTFEED;
+        this.createSlideShow(feed);
+      }
+    }
+
+    ssbg__MODULE_ID__.prototype.ssDiv = function() {
+      return _gel("slideshow__MODULE_ID__");
+    }
+
+    ssbg__MODULE_ID__.prototype.editForm = function() {
+      return _gel(ssbg__MODULE_ID__.prefid + 'form');
+    }
+
+    ssbg__MODULE_ID__.prototype.typeBox = function() {
+      return _gel(ssbg__MODULE_ID__.prefid + 0);
+    }
+
+    ssbg__MODULE_ID__.prototype.titleForm = function() {
+      return _gel(ssbg__MODULE_ID__.prefid + 1);
+    }
+
+    ssbg__MODULE_ID__.prototype.userForm = function() {
+      return _gel(ssbg__MODULE_ID__.prefid + 2);
+    }
+
+    ssbg__MODULE_ID__.prototype.albumBox = function() {
+      return _gel(ssbg__MODULE_ID__.prefid + 3);
+    }
+
+    ssbg__MODULE_ID__.prototype.feedForm = function() {
+      return _gel(ssbg__MODULE_ID__.prefid + 4);
+    }
+
+    ssbg__MODULE_ID__.prototype.tagForm = function() {
+      return _gel(ssbg__MODULE_ID__.prefid + 5);
+    }
+
+    ssbg__MODULE_ID__.prototype.bgColorBox = function() {
+      return _gel(ssbg__MODULE_ID__.prefid + 6);
+    }
+
+    ssbg__MODULE_ID__.prototype.displaySizeBox = function() {
+      return _gel(ssbg__MODULE_ID__.prefid + 7);
+    }
+
+    ssbg__MODULE_ID__.prototype.displayTimeForm = function() {
+      return _gel(ssbg__MODULE_ID__.prefid + 8);
+    }
+
+    ssbg__MODULE_ID__.prototype.hidePrefsUI = function() {
+      var type = this.typeBox().selectedIndex;
+      var usertr = this.userForm().parentNode.parentNode;
+      var albumtr = this.albumBox().parentNode.parentNode;
+      var feedtr = this.feedForm().parentNode.parentNode;
+      var tagtr = this.tagForm().parentNode.parentNode;
+      if (type == 0) { // PWA
+        usertr.style.display = "";
+        albumtr.style.display = "";
+        feedtr.style.display = "none";
+        tagtr.style.display = "none";
+      } else if (type == 1) { // TAG
+        usertr.style.display = "none";
+        albumtr.style.display = "none";
+        feedtr.style.display = "none";
+        tagtr.style.display = "";
+      } else { // MANUAL
+        usertr.style.display = "none";
+        albumtr.style.display = "none";
+        feedtr.style.display = "";
+        tagtr.style.display = "none";
+      }
+    }
+
+    ssbg__MODULE_ID__.prototype.formWidth = function() {
+      if (this.ie) return "93.25%";
+      return "93.75%";
+    }
+
+    ssbg__MODULE_ID__.prototype.hookPrefsUI = function() {
+      var self = this;
+
+      // edit div
+      var editForm = this.editForm();
+      if (editForm) {
+	var editDiv = editForm.parentNode;
+        editDiv.style.overflow = "hidden";	
+      }
+
+      // type of slideshow
+      var typebox = this.typeBox();
+      if (typebox) {
+        typebox.onchange = function() {self.typeChangedEvent();};
+        var tds = typebox.parentNode.parentNode.getElementsByTagName('td');
+        for (var i = 0; i < tds.length; i++) {
+          tds[i].style.paddingBottom = "15px";
+        }
+	// First is title.
+	tds[0].style.fontWeight = "bold";
+      }
+
+      // title
+      var titleform = this.titleForm();
+      if (titleform) {
+        titleform.onchange = function() {self.titleChangedEvent();};
+        titleform.size = 40;
+        titleform.style.width = this.formWidth();
+        titleform.parentNode.style.paddingBottom = "2px";
+      }
+
+      // user
+      var userform = this.userForm();
+      if (userform) {
+        userform.onchange = function() {self.userChangedEvent();};
+        userform.size = 40;
+        userform.style.width = this.formWidth();
+        userform.parentNode.style.paddingBottom = "2px";
+      }
+
+      // album list
+      var albumbox = this.albumBox();
+      if (albumbox) {
+        albumbox.onchange = function() {self.albumChangedEvent();};
+      }
+
+      // feeds
+      var feedform = this.feedForm();
+      if (feedform) {
+        feedform.onchange = function() {self.feedChangedEvent();};
+        feedform.size = 40;
+        feedform.style.width = this.formWidth();
+        feedform.parentNode.style.paddingBottom = "2px";
+      }
+
+      // tags
+      var tagform = this.tagForm();
+      if (tagform) {
+        tagform.onchange = function() {self.tagChangedEvent();};
+        tagform.size = 40;
+        tagform.style.width = this.formWidth();
+        tagform.parentNode.style.paddingBottom = "2px";
+      }
+
+      // background color
+      var bgbox = this.bgColorBox();
+      if (bgbox) {
+        bgbox.onchange = function() {self.bgColorChangedEvent();};
+      }
+
+      // size
+      var szbox = this.displaySizeBox();
+      if (szbox) {
+        szbox.onchange = function() {self.sizeChangedEvent();};
+      }
+
+      // display time
+      var displayform = this.displayTimeForm();
+      if (displayform) {
+        displayform.onchange = function() {self.displayTimeChangedEvent();};
+        displayform.size=1;
+        displayform.style.width = "2em";
+        displayform.style.textAlign = "center";
+      }
+
+      // Cancel button for reverting realtime changes/previews
+      _cedit__MODULE_ID__ = _cedit;
+      _cedit = function(id) {
+        if (id == '__MODULE_ID__') {
+          self.revert();
+        }
+        var retval = _cedit__MODULE_ID__(id);
+          if (id == '__MODULE_ID__') {
+          self.hidePrefsUI();
+          self.revertAlbumList();
+          self.doShow(parseInt(self.prefs.getString("type")));
+        }
+        return retval;
+      }
+
+      this.hidePrefsUI();
+    }
+
+    ssbg__MODULE_ID__.prototype.revert = function(size) {
+      // Revert back to last saved state.
+      this.showActionHint('__MSG_reverting__');
+      this.setBgColor(this.prefs.getString("bgcolor"));
+      this.setSize(this.prefs.getString("size"));
+    }
+
+    ssbg__MODULE_ID__.prototype.revertAlbumList = function(size) {
+      if (!this.savedAlbumList) return;
+      var albumbox = this.albumBox();
+      if (!albumbox) return;
+      albumbox.disabled = false;
+      var albumList = this.savedAlbumList;
+      var savedFeed = this.prefs.getString("album");
+      albumbox.options.length = 0;
+      for (var i = 0; i < albumList.length; i++) {
+        albumbox.options[i] = new Option(albumList[i].title, albumList[i].guid);
+        if (albumList[i].guid == savedFeed) {
+          albumbox.selectedIndex = i;
+        }
+      }
+    }
+
+    ssbg__MODULE_ID__.prototype.typeChangedEvent = function(event) {
+      this.hidePrefsUI();
+      this.showActionHint('__MSG_loading__');
+      var type = this.typeBox().selectedIndex;
+      if (type == 0) { // PWA
+	if (!this.prefs.getString("user")) {
+	  this.userForm().value = ssbg__MODULE_ID__.DEFAULTUSER;
+        }
+        // Set other after albums load..
+      } else if (type == 1) { // TAG
+        var title = this.getTagInput() + " Images";
+        this.setTitle(title);
+      } else { // FEED
+        this.setTitle('__MSG_ss_feed_title__');
+      }
+      this.doShow(type);
+    }
+
+    ssbg__MODULE_ID__.prototype.feedChangedEvent = function(event) {
+      this.showActionHint('__MSG_loading__');
+
+      // Suggest a title.
+      this.setTitle('__MSG_ss_feed_title__');
+      this.createSlideShow(this.getFeedInput());
+    }
+
+    ssbg__MODULE_ID__.prototype.tagChangedEvent = function(event) {
+      this.showActionHint('__MSG_loading__');
+
+      // Suggest a title.
+      var title = this.getTagInput() + " Images";
+      this.setTitle(title);
+
+      var feed = this.feedFromTag(this.getTagInput());
+      this.createSlideShow(feed);
+
+    }
+
+    ssbg__MODULE_ID__.prototype.setSize = function(size) {
+      var ssdiv = this.ssDiv();
+      if (ssdiv) {
+        if (size == "small") {
+          ssdiv.style.width = "144px";
+          ssdiv.style.height = "108px";
+          ssdiv.style.padding = "5px";
+        } else if (size == "medium") {
+          ssdiv.style.width = "216px";
+          ssdiv.style.height = "162px";
+          ssdiv.style.padding = "8px";
+        } else if (size == "large") {
+          ssdiv.style.width = "288px";
+          ssdiv.style.height = "216px";
+          ssdiv.style.padding = "10px";
+        }
+      }
+    }
+
+    ssbg__MODULE_ID__.prototype.sizeChangedEvent = function(event) {
+      var szbox = this.displaySizeBox();
+      this.setSize(szbox.value);
+      this.showActionHint('__MSG_resizing__');
+      this.createSlideShow(this.feed);
+    }
+
+    ssbg__MODULE_ID__.prototype.setBgColor = function(bgcolor) {
+      if (bgcolor == "ifl") {
+        bgcolor = this.theme.bg;
+      }
+      var ssdiv = this.ssDiv();
+      if (ssdiv) {
+        ssdiv.style.backgroundColor = bgcolor;
+      }
+    }
+
+    ssbg__MODULE_ID__.prototype.bgColorChangedEvent = function(event) {
+      var bgbox = this.bgColorBox();
+      this.setBgColor(bgbox.value);
+    }
+
+    ssbg__MODULE_ID__.prototype.displayTimeChangedEvent = function(event) {
+      var newdt = this.getDisplayTimeInput();
+      this.ss.options.displayTime = parseInt(newdt)*1000;
+    }
+
+    ssbg__MODULE_ID__.prototype.albumChangedEvent = function(event) {
+      // Do auto-preview..
+      this.showActionHint('__MSG_loading__');
+      var albumbox = this.albumBox();
+      var index = albumbox.selectedIndex;
+
+      // Suggest a title.
+      var author = null;
+      if (this.currentAlbumList) {
+        author = this.currentAlbumList[index].author;
+      }
+      author = author || this.getUserInput();
+      var title = albumbox.options[index].innerHTML + " by " + author;
+      this.setTitle(title);
+
+      this.createSlideShow(albumbox.options[index].value);
+    }
+
+    ssbg__MODULE_ID__.prototype.titleChangedEvent = function(event) {
+      var newtitle = this.getTitleInput();
+      this.setTitle(newtitle);
+    }
+
+    ssbg__MODULE_ID__.prototype.userChangedEvent = function(event) {
+      var newuser = this.getUserInput();
+      this.loadAlbumList(newuser);
+    }
+
+    ssbg__MODULE_ID__.prototype.createSlideShow = function(feed) {
+      var dt = parseInt(this.prefs.getString("displaytime"));
+      if (dt < 1) {
+        dt = 3;  //default
+      }
+      var self = this;
+      var options = {
+        displayTime: dt*1000,
+        transistionTime: 750,
+        scaleImages : true,
+	feedLoadCallback: function(result) {self.feedLoaded(result);},
+        linkTarget : google.feeds.LINK_TARGET_BLANK
+      };
+      // snapshot current feed for preview.
+      this.feed = feed || ssbg__MODULE_ID__.DEFAULTFEED;
+      this.ss = new GFslideShow(this.feed, "slideshow__MODULE_ID__", options);
+    }
+
+    ssbg__MODULE_ID__.prototype.feedLoaded = function(result) {
+      // Just do error processing here for localized error messages.
+      if (result.error) {
+        this.showActionHint('__MSG_failed__');	
+      } else if (result.feed.entries.length <= 0) {
+        this.showActionHint('__MSG_noresults__');	
+      }
+    }
+
+    ssbg__MODULE_ID__.prototype.loadAlbumList = function(username) {
+      username = username || this.prefs.getString("user") || ssbg__MODULE_ID__.DEFAULTUSER;
+      var url = "http://picasaweb.google.com/data/feed/base/user/" + username;
+      url += "?kind=album&alt=rss";
+      var albums = new google.feeds.Feed(url);
+      albums.setResultFormat(google.feeds.Feed.MIXED_FORMAT);
+      albums.setNumEntries(google.feeds.Feed.MAX_ENTRIES);
+      var self = this;
+      albums.load(function(result) {self.buildAlbumList(username, result);});
+      var albumbox = this.albumBox();
+      if (!albumbox) return;
+      albumbox.options.length = 0;
+      albumbox.options[0] = new Option("loading album list..", "-1");
+    }
+
+    ssbg__MODULE_ID__.prototype.setUserPWA = function(user) {
+      this.prefs.set("user", user);
+      this.userForm().value = user;
+    }
+
+    ssbg__MODULE_ID__.prototype.setDefaultPWA = function() {
+      this.setUserPWA(ssbg__MODULE_ID__.DEFAULTUSER);
+    }
+
+    ssbg__MODULE_ID__.prototype.buildAlbumList = function(username, result) {
+      var albumbox = this.albumBox();
+      if (!albumbox) return;
+      if (result.error || result.feed.entries.length == 0) {
+	if (this.firstPWALoad) {
+	  this.setDefaultPWA();
+	  return;
+        }
+        if (result.error) {
+          albumbox.options[0] = new Option("User not found", "-1");
+        } else {
+          albumbox.options[0] = new Option("No public albums found", "-1");
+        }
+        albumbox.disabled = true;
+        if (!this.ss) {
+          this.createSlideShow(ssbg__MODULE_ID__.DEFAULTFEED);
+        }
+        return;
+      }
+      albumbox.disabled = false;
+      var albumList = result.feed.entries;
+
+      // Clear out old list.
+      albumbox.options.length = 0;
+      for (var i = 0; i < albumList.length; i++) {
+        var guids = google.feeds.getElementsByTagNameNS(albumList[i].xmlNode, 
+                                                        "", "guid");
+        if (guids && guids.length > 0) {
+          // GUID is feed url for album, with a little help.. :)
+          var guid = guids[0].firstChild.nodeValue;
+          albumList[i].guid = guid.replace("entry", "feed");
+          albumbox.options[i] = new Option(albumList[i].title, albumList[i].guid);
+        }
+      }
+
+      this.currentAlbumList = albumList;
+
+      // todo: move this up.
+      var index = 0;
+
+      if (this.firstPWALoad) {
+        this.firstPWALoad = false;
+        this.savedAlbumList = albumList;
+        var savedFeed = this.prefs.getString("album");
+        for (var i = 0; i < albumList.length; i++) {
+          if (albumList[i].guid == savedFeed) {
+            index = i;
+            break;
+          }
+        }
+      } else {
+        var author = albumList[index].author || username;
+        var title = albumList[index].title + " by " + author;
+        this.setTitle(title);
+      }
+      albumbox.selectedIndex = index;
+      if (this.typeBox().selectedIndex == 0) { // PWA
+        this.createSlideShow(albumbox.options[index].value);
+      } else {
+	this.setUserPWA(username);
+      }
+    }
+
+    ssbg__MODULE_ID__.prototype.setTitle = function(title) {
+      title = title || "__MSG_ss_title_default__";
+      _IG_SetTitle(title, __MODULE_ID__);
+      this.titleForm().value = title;
+    }
+
+    ssbg__MODULE_ID__.prototype.getTitleInput = function() {
+      return this.getPrefInput(1);
+    }
+
+    ssbg__MODULE_ID__.prototype.getUserInput = function() {
+      return this.getPrefInput(2);
+    }
+
+    ssbg__MODULE_ID__.prototype.getFeedInput = function() {
+      return this.getPrefInput(4);
+    }
+
+    ssbg__MODULE_ID__.prototype.getTagInput = function() {
+      return this.getPrefInput(5);
+    }
+
+    ssbg__MODULE_ID__.prototype.getDisplayTimeInput = function() {
+      return this.getPrefInput(6);
+    }
+
+    ssbg__MODULE_ID__.prototype.getPrefInput = function(prefid) {
+      var val = null;
+      try {
+        val = _gel(ssbg__MODULE_ID__.prefid + prefid).value;
+      } catch (e) {}
+      return val;
+    }
+
+    ssbg__MODULE_ID__.getUserName = function() {
+      // guser->nobr->b
+      var username = null;
+      try {
+        var email = _gel("guser").getElementsByTagName('b')[0].innerHTML;
+        var i = email.indexOf("@");
+        if (i >= 0) {
+          username = email.substr(0, i);
+        }
+      } catch (e) {}
+      return username;
+    }
+
+    ssbg__MODULE_ID__.prototype.grabThemeColors = function() {
+      this.theme = {
+	fg: '#cccccc',
+	bg: '#ffffff'
+      };
+
+      var bg_style = (this.ie ? "backgroundColor" : "background-color");
+      var mtitle = _gel(ssbg__MODULE_ID__.prefid + "h").parentNode;
+
+      if (mtitle.currentStyle) {
+        this.theme.bg = mtitle.currentStyle[bg_style];
+	this.theme.fg = mtitle.currentStyle['color'];
+      } else if (document.defaultView && document.defaultView.getComputedStyle) {
+        this.theme.bg = document.defaultView.getComputedStyle(mtitle,null).getPropertyValue(bg_style);
+	this.theme.fg = document.defaultView.getComputedStyle(mtitle,null).getPropertyValue('color');
+      }
+    }
+
+</script>
+
+    <div class="slideshow__MODULE_ID__" id="slideshow__MODULE_ID__"></div>
+
+]]>
+</Content>
+</Module>
