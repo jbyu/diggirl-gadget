@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8" ?> 
+<Module>
+  <ModulePrefs title="Photos: __UP_address__"
+	       title_url="http://picasaweb.google.com/__UP_address__"
+	       directory_title="Picasa Web Album Photos"
+	       author="Google Engineering"
+	       author_email="jwray.feedback.picasaweb@gmail.com"
+	       author_affiliation="Google Inc."
+	       author_location="Santa Monica, CA"
+	       category="funandgames"
+	       category2="tools"
+	       description="View photos from a Picasa Web Albums public gallery on your home page!"
+	       screenshot="http://www.google.com/ig/modules/photos.png"
+	       thumbnail="http://www.google.com/ig/modules/photos-thm.png">
+    <Require feature="dynamic-height"/>
+    <Require feature="settitle"/>
+  </ModulePrefs> 
+ <UserPref name="address" display_name="Email" default_value="" required="true"/>
+ <UserPref name="interval" display_name="Seconds" default_value="15"/>
+  <Content type="html"> 
+  <![CDATA[ 
+<div style="text-align: center;" id="div" width="100%"></div>
+
+<script>
+var prefs = new _IG_Prefs(__MODULE_ID__);
+var address = prefs.getString('address');
+var user_feed;
+var albums = [];
+var albumsById = {};
+var photosById = {};
+var photoCount = 0;
+var photoIndex = 0;
+var img;
+var anchor;
+
+getUser();
+
+function Album(entry) {
+  this.id = entry['gphoto$id'].$t;
+  this.title = entry.title.$t;
+  this.numphotos = parseInt(entry['gphoto$numphotos'].$t);
+}
+
+function Photo(entry) {
+  this.id = entry['gphoto$id'].$t;
+  this.title = entry.title.$t;
+  this.summary = entry.summary.$t;
+  this.link = '';
+  var link = entry.link;
+
+  for (var i = 0; i < link.length; ++i) {
+    if (link[i].rel == 'alternate') {
+      this.link = link[i].href;
+    }
+  }
+  
+  var media = entry['media$group'];
+  this.imgsrc = media['media$content'][0].url;
+}
+
+function rand(n) {
+  return Math.floor(Math.random() * n);
+}
+
+function promptUser() {
+   _gel('div').innerHTML +=
+      '<p>Click the down arrow in the gadget title bar (above) ' +
+      'and select "Edit Settings" to enter an email address.</p>';
+}
+
+function getUser() {
+  if (address == '') {
+     promptUser();
+     return;
+  }
+  var url = 'http://picasaweb.google.com/data/feed/api/user/' + _esc(address) +
+            '?kind=album&alt=json'
+
+  _IG_FetchContent(url, handleUser);
+}
+
+function handleUser(responseText) {
+  var root;
+
+  try {
+    root = eval( '(' + responseText + ')' );
+  } catch (err) {
+    _gel('div').innerHTML = responseText;
+    promptUser();
+    return;
+  }
+  user_feed = root.feed;
+
+  if (user_feed.entry == null) {
+    _gel('div').innerHTML = 'This account has no public photos.';
+    promptUser();
+    return;
+  }
+  _IG_SetTitle(user_feed.author[0].name.$t + "'s photos");
+
+  for (var i = 0; i < user_feed.entry.length; ++i) {
+    var album = new Album(user_feed.entry[i]);
+    albums[i] = album;
+    albumsById[album.id] = album;
+    photoCount += album.numphotos;
+  }
+  getRandomPhoto();
+  setInterval('getRandomPhoto()', prefs.getInt('interval') * 1000);
+}
+
+function getRandomPhoto() {
+  photoIndex = rand(photoCount);
+
+  for (var i = 0; i < albums.length; ++i) {
+    var album = albums[i];
+    if (photoIndex < album.numphotos) {
+      if (album.photos) {
+        showPhoto(album);
+      } else {
+        getAlbum(album.id);
+      }
+      return;
+    }
+    photoIndex -= album.numphotos;
+  }
+  alert('unreached');
+}
+
+function getAlbum(albumid) {
+  var url = 'http://picasaweb.google.com/data/feed/api/user/' + _esc(address) +
+            '/albumid/' + albumid + '?kind=photo&alt=json';
+
+  _IG_FetchContent(url, handleAlbum);
+}
+
+function handleAlbum(responseText) {
+  var root;
+  try {
+    root = eval( '(' + responseText + ')' );
+  } catch (err) {
+    _gel('div').innerHTML = responseText;
+    promptUser();
+    return;
+  }
+  var album_feed = root.feed;
+  var albumid = album_feed['gphoto$id'].$t;
+  var album = albumsById[albumid];
+  album.photos = [];
+
+  for (var i = 0; i < album_feed.entry.length; ++i) {
+    var photo = new Photo(album_feed.entry[i]);
+    album.photos[i] = photo;
+    photosById[album.id] = photo;
+  }
+  showPhoto(album);
+}
+
+function getImgWidth() {
+  var width = document.width ?
+              document.width : document.documentElement.offsetWidth;
+  if (width >= 800) {
+    return 800;
+  } else if (width >= 400) {
+    return 400;
+  } else if (width >= 320) {
+    return 320;
+  } else if (width >= 288) {
+    return 288;
+  } else if (width >= 200) {
+    return 200;
+  } else if (width >= 160) {
+    return 160;
+  } else if (width >= 144) {
+    return 144;
+  } else {
+    return 72;
+  }
+}
+
+function showPhoto(album) {
+  var photo = album.photos[photoIndex];
+  var width = getImgWidth();
+  if (img) {
+    img.src = photo.imgsrc + '?imgmax=' + width;
+    anchor.href = photo.link;
+  } else {
+    img = document.createElement('img');
+    img.onload = adjustHeight;
+    img.border = 0;
+    anchor = document.createElement('a');
+    anchor.href = photo.link;
+    anchor.target = '_top';
+    _gel('div').appendChild(anchor);
+    anchor.appendChild(img);
+    img.src = photo.imgsrc + '?imgmax=' + width;
+  }
+}
+
+function adjustHeight() {
+  // Tells gadget to resize itself
+  _IG_AdjustIFrameHeight();
+}
+</script>
+  ]]> 
+  </Content> 
+</Module>

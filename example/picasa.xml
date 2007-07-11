@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Module>
+<ModulePrefs title="__UP_title__"
+             directory_title="Picasa Web Photos"
+             title_url="__UP_gallery__"
+             author="Sophia B."
+             author_location="Mountain View, CA"
+             author_affiliation="Google Inc."
+             author_email="sophia.feedback+picasa@gmail.com"
+             screenshot="/ig/modules/picasa.png"
+             thumbnail="/ig/modules/picasa-thm.png"
+             render_inline="optional"
+             description="Browse your picasa web photos on your homepage.">
+</ModulePrefs>
+<UserPref name="feed" display_name="Picasa Web RSS Feed" default_value="" datatype="string" required="true"/>
+<UserPref name="title" display_name="Title" default_value="My Picasa Photos" datatype="string" required="true"/>
+<UserPref name="gallery" display_name="Title URL" default_value="" datatype="string" required="false"/>
+<UserPref name="desc" display_name="Show description" default_value="true" datatype="bool"/>
+<Content type="html">
+<![CDATA[
+<style>
+  .img__MODULE_ID__ {
+    border-width:1px;
+  }
+  .arrow__MODULE_ID__ A:visited {
+    font-size:20px;
+    text-decoration:none;
+    color:#3366cc;
+    vertical-align:top;
+  }
+  .arrow__MODULE_ID__ A:link{
+    font-size:20px;
+    text-decoration:none;
+    color:#3366cc;
+    padding-bottom:4px;
+  }
+  .arrow__MODULE_ID__ {
+    vertical-align:top;
+    padding-bottom:4px;
+  }
+  .sourceLink__MODULE_ID__ A:link {
+    color:#7777cc;
+  }
+  .sourceLink__MODULE_ID__ A:visited {
+    color:#7777cc;
+  }
+  #photoDiv__MODULE_ID__ {
+  }
+  #description__MODULE_ID__ {
+    padding-top:4px;
+    font-size:11px;
+    text-align:center;
+  }
+  #select__MODULE_ID__ {
+    text-align:center;
+    padding-bottom:4px;
+  }
+  #photoNum__MODULE_ID__ {
+    font-size:smaller;
+    padding-right:6px;
+    padding-left:6px;
+  }
+</style>
+
+<div id=photoDiv__MODULE_ID__>
+  <table cellpadding=0 cellspacing=0 width=100% class=photoTable__MODULE_ID__>
+    <tr>
+      <td width=50% align=right class=arrow__MODULE_ID__>
+        <a href='javascript:void(0)' onclick='prevPhoto__MODULE_ID__()'>&laquo;</a>
+      </td>
+      <td align=center id=photoNum__MODULE_ID__>
+      </td>
+      <td width=50% class=arrow__MODULE_ID__>
+        <a href='javascript:void(0)' onclick='nextPhoto__MODULE_ID__()'>&raquo;</a>
+      </td>
+    </tr>
+    <tr>
+      <td colspan=3 align=center width=100%>
+        <div id=photo__MODULE_ID__>
+        </div>
+      </td>
+    </tr>
+  </table>
+  <div id=description__MODULE_ID__>
+  </div>
+</div>
+
+<script>
+  var prefs__MODULE_ID__;
+  var index__MODULE_ID__;
+  var photoObjects__MODULE_ID__;
+  var xml__MODULE_ID__;
+
+  function loadPhotos__MODULE_ID__() {
+    prefs__MODULE_ID__ = new _IG_Prefs(__MODULE_ID__);
+    index__MODULE_ID__ = prefs__MODULE_ID__.getInt("index");
+    var feed = prefs__MODULE_ID__.getString("feed");
+    feed = feed.replace(/\/base\//g, "/api/");
+    _IG_FetchXmlContent(feed, parseAndDisplayPhotos__MODULE_ID__);
+  }
+
+  function value__MODULE_ID__(parent, tag) {
+    return _hesc(parent.getElementsByTagName(tag).item(0).firstChild.nodeValue);
+  }
+
+  function photoObject__MODULE_ID__(photosrc, photolink, description) {
+    this.photoSrc = photosrc;
+    this.photoLink = photolink;
+    this.description = description;
+  }
+
+  function parseAndDisplayPhotos__MODULE_ID__(xmlDoc) {
+    var items = xmlDoc.getElementsByTagName("item");
+    photoObjects__MODULE_ID__ = new Array(items.length);
+    for (var i = 0; i < items.length; i++) {
+      var item = items.item(i);
+      var description = "";
+      if (item.getElementsByTagName("description").length > 0) {
+        if (item.getElementsByTagName("description").item(0).firstChild != null) {
+          description = value__MODULE_ID__(item, "description");
+        }
+      }
+      var photolink = value__MODULE_ID__(item, "link");
+      var photosrc = "";
+      if (item.getElementsByTagName("thumbnail").item(0) != null) {
+         photosrc = value__MODULE_ID__(item, "thumbnail");
+      } else {
+         photosrc = value__MODULE_ID__(item, "photo:thumbnail");
+      }
+      photoObjects__MODULE_ID__[i] = new photoObject__MODULE_ID__(photosrc, photolink, description);
+    }
+
+    loadPhoto__MODULE_ID__(index__MODULE_ID__);
+  }
+
+  function nextPhoto__MODULE_ID__() {
+    index__MODULE_ID__++;
+    if (index__MODULE_ID__ >= photoObjects__MODULE_ID__.length) {
+      index__MODULE_ID__ = 0;
+    }
+    loadPhoto__MODULE_ID__(index__MODULE_ID__);
+  }
+
+  function prevPhoto__MODULE_ID__ () {
+    index__MODULE_ID__--;
+    if (index__MODULE_ID__ < 0) {
+      index__MODULE_ID__ = photoObjects__MODULE_ID__.length - 1;
+    }
+    loadPhoto__MODULE_ID__(index__MODULE_ID__);
+    prefs__MODULE_ID__.set("index", index__MODULE_ID__);
+  }
+
+  function loadPhoto__MODULE_ID__(index) {
+    _gel("photoNum__MODULE_ID__").innerHTML =  Number(index + 1) + "&nbsp;of&nbsp;" + photoObjects__MODULE_ID__.length;
+    var photoObject = photoObjects__MODULE_ID__[index];
+    _gel("photo__MODULE_ID__").innerHTML =
+      "<a href='" + photoObject.photoLink + "'>" +
+        "<img class=img__MODULE_ID__ src='" + photoObject.photoSrc + "' />" +
+      "</a>";
+    if (prefs__MODULE_ID__.getBool("desc")) {
+      _gel("description__MODULE_ID__").innerHTML = photoObject.description;
+    }
+  }
+
+  _IG_RegisterOnloadHandler(loadPhotos__MODULE_ID__);
+
+</script>
+
+]]>
+</Content>
+</Module>
+
