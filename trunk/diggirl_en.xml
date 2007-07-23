@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<messagebundle>
+<msg name="loading">Loading...</msg>
+<msg name="count">Photo Count</msg>
+<msg name="slide">Enable Slide-Show</msg>
+<msg name="auto">Enable Auto-Play</msg>
+<msg name="interval">Refresh Rate</msg>
+<msg name="no_refresh">No</msg>
+<msg name="sec">sec.</msg>
+<msg name="min">min.</msg>
+<msg name="hottodayrss">Hot Today</msg>
+<msg name="newrss">New Girls</msg>
+<msg name="newpushrss">New Comments</msg>
+<msg name="newselectedrss">New Selected</msg>  
+<msg name="zoom">Zoom In</msg>
+<msg name="list">List Mode</msg>
+</messagebundle>

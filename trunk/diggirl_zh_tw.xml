@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<messagebundle>
+<msg name="loading">載入中...</msg>
+<msg name="count">相片數目</msg>
+<msg name="slide">幻燈片模式</msg>
+<msg name="auto">自動播放</msg>
+<msg name="interval">更新頻率</msg>
+<msg name="no_refresh">不更新</msg>
+<msg name="sec">秒</msg>
+<msg name="min">分</msg>
+<msg name="hottodayrss">今日熱門</msg>
+<msg name="newrss">最新美女</msg>
+<msg name="newpushrss">最新推文</msg>
+<msg name="newselectedrss">最新選圖</msg>
+<msg name="zoom">放大</msg>
+<msg name="list">列表模式</msg>
+</messagebundle>
