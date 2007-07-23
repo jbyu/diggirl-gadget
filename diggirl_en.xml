@@ -2,8 +2,8 @@
 <messagebundle>
 <msg name="loading">Loading...</msg>
 <msg name="count">Photo Count</msg>
-<msg name="slide">Enable Slide-Show</msg>
-<msg name="auto">Enable Auto-Play</msg>
+<msg name="slide">Enable SlideShow</msg>
+<msg name="auto">Enable AutoPlay</msg>
 <msg name="interval">Refresh Rate</msg>
 <msg name="no_refresh">No</msg>
 <msg name="sec">sec.</msg>
