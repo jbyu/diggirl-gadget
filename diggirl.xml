@@ -1,75 +1,404 @@
-<?xml version="1.0" encoding="UTF-8" ?> 
+<?xml version="1.0" encoding="UTF-8" ?>
 <Module>
-	<ModulePrefs title="diggirl.net" directory_title="photo" 
-		title_url="http://www.diggirl.net/" description="gadget for diggirl.net" 
-		author="Phenix Yu" author_email="phenix.yu+gadget@gmail.com" 
-		author_affiliation="NCTU, Taiwan" author_location="Taipei, Taiwan"
-		author_link="http://phenixyu.blogspot.com" >
-		<Require feature="tabs"/>
-		<Require feature="setprefs"/>
-		<Require feature="minimessage"/>
-		<Require feature="dynamic-height"/>
-	</ModulePrefs>
-	<UserPref name="selectedTab" datatype="hidden"/>
-	<Content type="html">
-	<![CDATA[ 
-		<div id="message"></div>
-		<div id="content"></div>
+<ModulePrefs
+title="diggirl.net"
+title_url="http://www.diggirl.net"
+description="gadget for www.diggirl.net"
+author="Phenix Yu"
+author_email="phenix.yu+gadget@gmail.com"
+author_affiliation="jbyu's lab."
+author_location="Taiwan">
+<Require feature="tabs"/>
+<Require feature="setprefs"/>
+<Require feature="dynamic-height"/>
+<Locale messages="http://diggirl-gadget.googlecode.com/svn/trunk/diggirl_en.xml"/> 
+<Locale lang="zh-tw" messages="http://diggirl-gadget.googlecode.com/svn/trunk/diggirl_zh_tw.xml"/> 
+</ModulePrefs>
+<UserPref name="selectedTab" datatype="hidden" />
+<UserPref name="slide" display_name="__MSG_slide__" datatype="bool" default_value="false" />
+<UserPref name="auto" display_name="__MSG_auto__" datatype="bool" default_value="false" />
+<UserPref name="count" display_name="__MSG_count__" datatype="enum" default_value="30">
+	<EnumValue value="6" display_value="6"/>
+	<EnumValue value="12" display_value="12"/>
+	<EnumValue value="18" display_value="18"/>
+	<EnumValue value="24" display_value="24"/>
+	<EnumValue value="30" display_value="30"/>
+</UserPref>
+<UserPref name="interval" display_name="__MSG_interval__" datatype="enum" default_value="0">
+	<EnumValue value="0" display_value="__MSG_no_refresh__"/>
+	<EnumValue value="5" display_value="5 __MSG_sec__"/>
+	<EnumValue value="10" display_value="10 __MSG_sec__"/>
+	<EnumValue value="30" display_value="30 __MSG_sec__"/>
+	<EnumValue value="60" display_value="1 __MSG_min__"/>
+	<EnumValue value="120" display_value="2 __MSG_min__"/>
+	<EnumValue value="300" display_value="5 __MSG_min__"/>
+</UserPref>
+<Content type="html">
+<![CDATA[
+<style type="text/css">
+/* copy from http://alistapart.com/articles/cssdropshadows */
+.img-shadow {
+	float:left;
+	background: url(http://diggirl-gadget.googlecode.com/svn/trunk/shadowAlpha.png) no-repeat bottom right !important;
+	background: url(http://diggirl-gadget.googlecode.com/svn/trunk/shadow.gif) no-repeat bottom right;
+	margin: 10px 0 0 10px !important;
+	margin: 10px 0 0 5px;
+}
+.img-shadow .img-div {
+	display: block;
+	position: relative;
+	background-color: #fff;
+	border: 1px solid #a9a9a9;
+	margin: -6px 6px 6px -6px;
+	padding: 4px 4px 2px 4px;
+}
+a {
+border-style: none;
+text-decoration: none;
+color: #0000ff;
+}
+a:hover {
+text-decoration: none;
+color: #ff0000;
+}
+a img {
+border-style: none;
+vertical-align: bottom;
+}
+a:hover img {
+background-color: #aaaaaa;
+}
+.img-link img {
+border :1px solid #000000;
+}
+.img-link:hover img {
+border :1px solid #ff0000;
+}
+.page {
+font-size: small;
+}
+.control img{
+padding: 2px;
+}
+.info {
+font-size: x-small;
+width: 100px;
+height: 14px;
+float: left;
+overflow: hidden;
+text-align: center;
+}
+.desc {
+font-size: 	medium;
+text-align: center;
+}
+</style>
+<script type="text/javascript">
+var tabs = new _IG_Tabs(__MODULE_ID__);
+var prefs= new _IG_Prefs(__MODULE_ID__);
+const SUMMARY_RE = /<img[^><]+src="([^">]+)"/i;
+const transit = 50;
+const delta = 0.1;
+const bSlide = prefs.getBool("slide");
+const bAuto = prefs.getBool("auto");
+const count = prefs.getInt("count");
+const perPage = 6;
+const interval = prefs.getInt("interval");
+var swapID = -1;
+var docWidth = document.width;
+var docHeight = document.height;
+var ie_mode = false;
+if (typeof window.ActiveXObject != "undefined") {
+	ie_mode = true;
+	docWidth = document.body.clientWidth;
+	docHeight = document.body.clientHeight;
+}
+function _MyPlayer(url, name) {
+	this.url  = url;
+	this.name = name;
+	this.index= 0;
+	this.length = 0;
+	this.bSlide = bSlide;
+	this.bAuto = bAuto;
+	this.playID = -1;
+	this.container = null;
+	this.feed = null;
+	this.imgS = new Array();
+	this.imgB = new Array();
+}
+var currPlayer = null;
+var players = new Array();
+players.push(new _MyPlayer("http://diggirl.net/hottodayrss.jsp", "__MSG_hottodayrss__"));
+players.push(new _MyPlayer("http://diggirl.net/newrss.jsp", "__MSG_newrss__"));
+players.push(new _MyPlayer("http://diggirl.net/newpushrss.jsp", "__MSG_newpushrss__"));
+players.push(new _MyPlayer("http://diggirl.net/newselectedrss.jsp", "__MSG_newselectedrss__"));
 
-		<script type="text/javascript">
-		// Global variables
-		//var prefs= new _IG_Prefs(__MODULE_ID__);
-		var tabs = new _IG_Tabs (__MODULE_ID__);
-		var msg  = new _IG_MiniMessage(__MODULE_ID__, _gel("message"));
+var playIcon = _IG_GetImage("http://diggirl-gadget.googlecode.com/svn/trunk/control_play_blue.png");
+var stopIcon = _IG_GetImage("http://diggirl-gadget.googlecode.com/svn/trunk/control_stop_blue.png");
+var prevIcon = _IG_GetImage("http://diggirl-gadget.googlecode.com/svn/trunk/resultset_previous.png");
+var nextIcon = _IG_GetImage("http://diggirl-gadget.googlecode.com/svn/trunk/resultset_next.png");
+var zoomIcon = _IG_GetImage("http://diggirl-gadget.googlecode.com/svn/trunk/search.png");
+var listIcon = _IG_GetImage("http://diggirl-gadget.googlecode.com/svn/trunk/application_view_tile.png");
+zoomIcon.alt = zoomIcon.title = prefs.getMsg("zoom");
+listIcon.alt = listIcon.title = prefs.getMsg("list");
+
+function SetOpacity(image, opacity) {
+	if (image == null) return;
+	if (opacity > 1) opacity = 1;
+	if (opacity > 0) image.style.visibility = "visible";
+	else {
+		opacity = 0;
+		image.style.visibility = "hidden";
+	}
+	if (ie_mode) image.style.filter = "alpha(opacity=" + opacity*100 + ")";
+	image.style.opacity = image.opacity = opacity;
+}
+
+function Init() {
+	for(var i = 0; i < players.length; i++) {
+		tabs.addDynamicTab(players[i].name, GeneratorCB(players[i].url) );
+	}
+	currPlayer = players[tabs.getSelectedTab().getIndex()];
+}
+
+function GeneratorCB(url) { 
+	return function(tabId) { _IG_FetchFeedAsJSON(url, FeedCB, count, true); }
+}
+
+function FeedCB(feed) {
+	var currTab = tabs.getSelectedTab();
+	var index = currTab.getIndex();
+	Reset();
+	currPlayer = players[index];
+	currPlayer.container = currTab.getContentContainer();
+	
+	if (feed.ErrorMsg) {
+		currPlayer.container.innerHTML = "<i>Invalid data.</i>";
+		return;
+	}
+	// collect all images from feed
+	currPlayer.feed = feed;
+	currPlayer.length = feed.Entry.length;
+	for (var i = 0; i < currPlayer.length; i++) {
+		var m = feed.Entry[i].Summary.match(SUMMARY_RE);
+		currPlayer.imgS[i] = _IG_GetImage( m[1] );
+		currPlayer.imgB[i] = _IG_GetImage( m[1].replace(/\/([0-9]+)\.jpg/,'/b$1.jpg') );
+		currPlayer.imgS[i].alt = currPlayer.imgS[i].title = feed.Entry[i].Title;
+		currPlayer.imgB[i].alt = currPlayer.imgB[i].title = feed.Entry[i].Title;
 		
-		msg.createDismissibleMessage("Please close me when you're done reading me.");
+		currPlayer.imgS[i].onload = function(event) {
+			var img = event.currentTarget;
+			img.style.width = stretch(img.width, docWidth/2)+'px';
+		};
+		currPlayer.imgB[i].onload = function(event) {
+			var img = event.currentTarget;
+			img.style.width = stretch(img.width, docWidth)+'px';
+		};
+	}
+	if (currPlayer.bSlide)
+		ShowSlide(currPlayer.index);
+	else
+		ShowList();
+}
 
-		function timeCallback(tabId) {
-			var date = new Date(); 
-			_gel(tabId).innerHTML = date.toLocaleString();
-		}
+function stretch(width, limit) {
+	if (width > limit) return stretch(width/2, limit);
+	return width;
+}
 
-		function GeneratorCB(feedEntry) { return function(tabId) { EntryCB(tabId, feedEntry); } }
+function Reset() {
+	clearInterval(swapID);
+	clearInterval(currPlayer.playID);
+	currPlayer.playID = -1;
+}
 
-		function EntryCB(tabId, feedEntry) {
-			var container = _gel(tabId);
-			
-			// Display loading message before fetching feed.
-			container.innerHTML = '<div>Loading...</div>';
+function createTitle() { return '<div align="center"><b>'+currPlayer.feed.Title+'</b></div>'; }
+function createDIV() {
+	var html = createTitle();
+	html += '<table border="0" align="center"><tr><td height="256px">';
+	html += '<div id="shadow" class="img-shadow"><div id="photo" class="img-div" align="center"><i>'+prefs.getMsg("loading")+'</i></div></div>';
+	html += '</td></tr></table>';
+	html += '<div id="control" align="center" class="control">';
+	html += '<a href="javascript:ShowList();" id="list1"></a>';
+	html += '<a href="javascript:first();"><img src="http://diggirl-gadget.googlecode.com/svn/trunk/resultset_first.png"></a>';
+	html += '<a href="javascript:prev();"><img src="http://diggirl-gadget.googlecode.com/svn/trunk/resultset_previous.png"></a>';
+	html += '<a href="javascript:togglePlay();" id="play"><img src="http://diggirl-gadget.googlecode.com/svn/trunk/control_play_blue.png"></a>';
+	html += '<a href="javascript:next();"><img src="http://diggirl-gadget.googlecode.com/svn/trunk/resultset_next.png"></a>';
+	html += '<a href="javascript:last();"><img src="http://diggirl-gadget.googlecode.com/svn/trunk/resultset_last.png"></a>';
+	html += '<a href="javascript:ShowList();" id="list2"></a>';
+	html += '</div>';
+	return html;
+}
 
-			// Start building HTML string that will be displayed in gadget.
-			var html = "<table border='0' cellpadding='0' cellspacing='16'>";
-			for (var i = 0; i < feedEntry.length; i+=2) {
-				var entry = feedEntry[i];
-				html += '<tr>';
-				html += "<td align='center'><a target='_blank' href='" + entry.Link + "'>";
-				html += entry.Summary + '<br>' + entry.Title + '</a></td>';
-				entry = feedEntry[i+1];
-				html += "<td align='center'><a target='_blank' href='" + entry.Link + "'>";
-				html += entry.Summary + '<br>' + entry.Title + '</a></td>';
-				html += '</tr>';
-			}
-			container.innerHTML = html;
-			
-			// Resize iframe height to fit content.
-			_IG_AdjustIFrameHeight();
-		}
+function ShowSlide(index) {
+	Reset();
+	currPlayer.bSlide = true;
+	currPlayer.index = index;
+	currPlayer.container.innerHTML = createDIV();
+	_gel("list1").appendChild(listIcon.cloneNode(false));
+	_gel("list2").appendChild(listIcon.cloneNode(false));
+	swapImage();
+	if (currPlayer.bAuto) togglePlay();
+}
 
-		function FeedCB(feed) {		
-			if (feed.ErrorMsg) {
-				alert("There is no data.");
-				return;
-			}
-			var title = feed.Title;
-			if (feed.Title.length > 11) title = feed.Title.substr(11);
-			tabs.addDynamicTab(title, GeneratorCB(feed.Entry));
-		}	
+function ShowList(index) {
+	Reset();
+	currPlayer.bSlide = false;
+	currPlayer.container.innerHTML = createTitle();
 
-		_IG_FetchFeedAsJSON("http://diggirl.net/hottodayrss.jsp", FeedCB, 6, true);
-		_IG_FetchFeedAsJSON("http://diggirl.net/newrss.jsp", FeedCB, 6, true);
-		_IG_AdjustIFrameHeight();
+	if (index == undefined) index = Math.floor(currPlayer.index / perPage);
+	ShowPages(index);
+	
+	for (var i = index*perPage; i < (index+1)*perPage; i++) {
+		var imgObj = currPlayer.imgS[i];
+		var entry = currPlayer.feed.Entry[i];
+		var ctrl = document.createElement("div");
+		ctrl.setAttribute('align', 'right');
+		ctrl.setAttribute('class', 'control');
 		
-  		</script>
-	]]> 
-	</Content>
+		var info = document.createElement("div");
+		info.setAttribute('class', 'info');
+		info.innerHTML = entry.Title;
+
+		var zoomObj = document.createElement("a");
+		zoomObj.href = 'javascript:ShowSlide('+i+');';
+		zoomObj.appendChild(zoomIcon.cloneNode(false));
+		ctrl.appendChild(info);
+		ctrl.appendChild(zoomObj);
+		
+		var aObj = document.createElement("a");
+		aObj.setAttribute('class', 'img-link');
+		aObj.href = entry.Link;
+		aObj.target = "_blank";
+		aObj.appendChild(imgObj);
+
+		var imgDiv = document.createElement("div");
+		imgDiv.setAttribute('class', 'img-div');
+		imgDiv.setAttribute('align', 'center');
+		imgDiv.appendChild(aObj);
+		imgDiv.appendChild(ctrl);
+
+		var photoDiv = document.createElement("div");
+		photoDiv.setAttribute('class', 'img-shadow');
+		photoDiv.appendChild(imgDiv);
+
+		currPlayer.container.appendChild(photoDiv);
+	}
+	_IG_AdjustIFrameHeight();
+}
+
+function ShowPages(index) {
+	var num = count / perPage;
+	if (num < 2) return;
+
+	var panel = document.createElement("div");
+	panel.setAttribute('align', 'center');
+	panel.setAttribute('class', 'page');
+
+	if (index > 0) {
+		var link = document.createElement("a");
+		link.href = 'javascript:ShowList('+(index-1)+');';
+		link.appendChild(prevIcon);
+		panel.appendChild(link);
+	}
+
+	for (i = 0; i < num; i++) {
+		if (i != index){
+			var link = document.createElement("a");
+			link.href = 'javascript:ShowList('+i+')';
+			link.innerHTML = "&nbsp;"+(i+1)+"&nbsp;";
+			panel.appendChild(link);
+		} else {
+			var link = document.createElement("b");
+			link.innerHTML = "&nbsp;"+(i+1)+"&nbsp;";
+			panel.appendChild(link);
+		}
+	}
+	
+	if (index+1 < num) {
+		var link = document.createElement("a");
+		link.href = 'javascript:ShowList('+(index+1)+');';
+		link.appendChild(nextIcon);
+		panel.appendChild(link);
+	}
+	currPlayer.container.appendChild(panel);
+}
+
+function fadein(image) {
+	_IG_AdjustIFrameHeight();
+	SetOpacity(image, image.opacity + delta);
+	if (image.opacity == 1)
+		clearInterval(swapID);
+}
+function fadeout(image) {
+	SetOpacity(image, image.opacity - delta);
+	if (image.opacity == 0) {
+		clearInterval(swapID);
+		var imgObj = currPlayer.imgB[currPlayer.index];
+		var entry = currPlayer.feed.Entry[currPlayer.index];
+		var name = document.createElement("div");
+		name.setAttribute('class', 'desc');
+		name.innerHTML = entry.Title;
+		
+		var aObj = document.createElement("a");
+		aObj.setAttribute('class', 'img-link');
+		aObj.href = entry.Link;
+		aObj.target = "_blank";
+		aObj.appendChild(imgObj);
+		
+		var imgDiv = _gel('photo');
+		imgDiv.innerHTML = "";
+		imgDiv.appendChild(aObj);
+		imgDiv.appendChild(name);
+		swapID = setInterval(fadein, transit, image);
+	}
+}
+function swapImage() {
+	var imgPreload = new Image();
+	imgPreload.onload = function() {
+		clearInterval(swapID);
+		swapID = setInterval(fadeout, transit, _gel('shadow'));
+	};
+	imgPreload.src = currPlayer.imgB[currPlayer.index].src
+}
+function first(){
+	currPlayer.index = 0;
+	swapImage();
+}
+function next() {
+	currPlayer.index++;
+	if (currPlayer.index == currPlayer.length){
+		currPlayer.index = 0;
+	}
+	swapImage();
+}
+function prev() {
+	currPlayer.index--;
+	if (currPlayer.index < 0) {
+		currPlayer.index = currPlayer.length - 1;
+	}
+	swapImage();
+}
+function last(){
+	currPlayer.index = currPlayer.length - 1;
+	swapImage();
+}
+function togglePlay() {
+	var state = _gel('play');
+	state.innerHTML='';
+	if (currPlayer.playID != -1) {
+		clearInterval(currPlayer.playID);
+		currPlayer.playID = -1;
+		state.appendChild(playIcon);
+	} else if (interval > 0) {
+		currPlayer.playID = setInterval( function(){next();}, interval*1000 );
+		state.appendChild(stopIcon);
+	} else {
+		state.appendChild(playIcon);
+	}
+}
+_IG_RegisterOnloadHandler(Init);
+</script>
+]]>
+</Content>
 </Module>
