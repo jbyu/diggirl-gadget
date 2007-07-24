@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <Module>
-<ModulePrefs
-title="diggirl.net"
-title_url="http://www.diggirl.net"
-description="gadget for www.diggirl.net"
-author="Phenix Yu"
-author_email="phenix.yu+gadget@gmail.com"
-author_affiliation="jbyu's lab."
-author_location="Taiwan">
+<ModulePrefs title="diggirl.net" 
+title_url="http://www.diggirl.net" 
+description="gadget for www.diggirl.net" 
+screenshot="http://phenix.yu.googlepages.com/diggirl-screenshot.png" 
+thumbnail="http://phenix.yu.googlepages.com/diggirl-thumbnail.png" 
+author="Phenix Yu" 
+author_email="phenix.yu+gadget@gmail.com" 
+author_affiliation="jbyu's lab." 
+author_location="Taiwan" >
 <Require feature="tabs"/>
 <Require feature="setprefs"/>
 <Require feature="dynamic-height"/>
@@ -24,7 +25,7 @@ author_location="Taiwan">
 	<EnumValue value="24" display_value="24"/>
 	<EnumValue value="30" display_value="30"/>
 </UserPref>
-<UserPref name="interval" display_name="__MSG_interval__" datatype="enum" default_value="0">
+<UserPref name="interval" display_name="__MSG_interval__" datatype="enum" default_value="5">
 	<EnumValue value="0" display_value="__MSG_no_refresh__"/>
 	<EnumValue value="5" display_value="5 __MSG_sec__"/>
 	<EnumValue value="10" display_value="10 __MSG_sec__"/>
@@ -36,74 +37,71 @@ author_location="Taiwan">
 <Content type="html">
 <![CDATA[
 <style type="text/css">
-/* copy from http://alistapart.com/articles/cssdropshadows */
+/* from http://alistapart.com/articles/cssdropshadows */
 .img-shadow {
 	float:left;
 	background: url(http://diggirl-gadget.googlecode.com/svn/trunk/shadowAlpha.png) no-repeat bottom right !important;
 	background: url(http://diggirl-gadget.googlecode.com/svn/trunk/shadow.gif) no-repeat bottom right;
-	margin: 10px 0 0 10px !important;
-	margin: 10px 0 0 5px;
+	margin: 10px 0 0 10px;
 }
 .img-shadow .img-div {
-	display: block;
 	position: relative;
-	background-color: #fff;
+	top: -6px;
+	right: 6px;
+	background-color: #ffffff;
 	border: 1px solid #a9a9a9;
-	margin: -6px 6px 6px -6px;
-	padding: 4px 4px 2px 4px;
+	padding: 4px;
+	text-align: center;
 }
 a {
-border-style: none;
-text-decoration: none;
-color: #0000ff;
+	text-decoration: none;
+	color: #0000ff;
 }
-a:hover {
-text-decoration: none;
-color: #ff0000;
+a:visited { color: #0000ff; }
+a:hover   { color: #ff0000; }
+
+.img-div a img {
+	vertical-align: bottom;
+	border: 1px solid #000000;
 }
-a img {
-border-style: none;
-vertical-align: bottom;
+.img-div a:hover img {
+	border-color: #ff0000;
 }
-a:hover img {
-background-color: #aaaaaa;
+.control {
+	font-size: small;
+	text-align: center;
 }
-.img-link img {
-border :1px solid #000000;
+.control a img {
+	border: 1px solid transparent !important;
+	border: 1px solid #ffffff;
+	padding: 0 4px 0 4px;
+	vertical-align: bottom;
 }
-.img-link:hover img {
-border :1px solid #ff0000;
-}
-.page {
-font-size: small;
-}
-.control img{
-padding: 2px;
+.control a:hover img {
+	background-color: #aaaaaa;
+	border-color: transparent !important;
+	border-color: #ff0000;
 }
 .info {
-font-size: x-small;
-width: 100px;
-height: 14px;
-float: left;
-overflow: hidden;
-text-align: center;
+	font-size: x-small;
+	text-align: center;
 }
 .desc {
-font-size: 	medium;
-text-align: center;
+	font-size: 	medium;
+	text-align: center;
 }
 </style>
 <script type="text/javascript">
 var tabs = new _IG_Tabs(__MODULE_ID__);
 var prefs= new _IG_Prefs(__MODULE_ID__);
-const SUMMARY_RE = /<img[^><]+src="([^">]+)"/i;
-const transit = 50;
-const delta = 0.1;
-const bSlide = prefs.getBool("slide");
-const bAuto = prefs.getBool("auto");
-const count = prefs.getInt("count");
-const perPage = 6;
-const interval = prefs.getInt("interval");
+var SUMMARY_RE = /<img[^><]+src="([^">]+)"/i;
+var transit = 50;
+var delta = 0.1;
+var bSlide = prefs.getBool("slide");
+var bAuto = prefs.getBool("auto");
+var count = prefs.getInt("count");
+var perPage = 6;
+var interval = prefs.getInt("interval");
 var swapID = -1;
 var docWidth = document.width;
 var docHeight = document.height;
@@ -133,157 +131,146 @@ players.push(new _MyPlayer("http://diggirl.net/newrss.jsp", "__MSG_newrss__"));
 players.push(new _MyPlayer("http://diggirl.net/newpushrss.jsp", "__MSG_newpushrss__"));
 players.push(new _MyPlayer("http://diggirl.net/newselectedrss.jsp", "__MSG_newselectedrss__"));
 
-var playIcon = _IG_GetImage("http://diggirl-gadget.googlecode.com/svn/trunk/control_play_blue.png");
-var stopIcon = _IG_GetImage("http://diggirl-gadget.googlecode.com/svn/trunk/control_stop_blue.png");
-var prevIcon = _IG_GetImage("http://diggirl-gadget.googlecode.com/svn/trunk/resultset_previous.png");
-var nextIcon = _IG_GetImage("http://diggirl-gadget.googlecode.com/svn/trunk/resultset_next.png");
-var zoomIcon = _IG_GetImage("http://diggirl-gadget.googlecode.com/svn/trunk/search.png");
-var listIcon = _IG_GetImage("http://diggirl-gadget.googlecode.com/svn/trunk/application_view_tile.png");
-zoomIcon.alt = zoomIcon.title = prefs.getMsg("zoom");
+var slide = null;
+var imgPreload = new Image();
+var baseURL = "http://diggirl-gadget.googlecode.com/svn/trunk/";
+var playIcon = _IG_GetImage(baseURL+"control_play_blue.png");
+var stopIcon = _IG_GetImage(baseURL+"control_stop_blue.png");
+var prevIcon = _IG_GetImage(baseURL+"resultset_previous.png");
+var nextIcon = _IG_GetImage(baseURL+"resultset_next.png");
+var listIcon = _IG_GetImage(baseURL+"application_view_tile.png");
 listIcon.alt = listIcon.title = prefs.getMsg("list");
 
-function SetOpacity(image, opacity) {
-	if (image == null) return;
-	if (opacity > 1) opacity = 1;
-	if (opacity > 0) image.style.visibility = "visible";
-	else {
-		opacity = 0;
-		image.style.visibility = "hidden";
-	}
-	if (ie_mode) image.style.filter = "alpha(opacity=" + opacity*100 + ")";
-	image.style.opacity = image.opacity = opacity;
-}
-
 function Init() {
-	for(var i = 0; i < players.length; i++) {
+	for (var i = 0; i < players.length; i++) {
 		tabs.addDynamicTab(players[i].name, GeneratorCB(players[i].url) );
 	}
 	currPlayer = players[tabs.getSelectedTab().getIndex()];
 }
 
 function GeneratorCB(url) { 
-	return function(tabId) { _IG_FetchFeedAsJSON(url, FeedCB, count, true); }
+	return function(tabId) { _IG_FetchFeedAsJSON(url, FeedCB, count, true); };
 }
 
 function FeedCB(feed) {
 	var currTab = tabs.getSelectedTab();
 	var index = currTab.getIndex();
-	Reset();
+	resetAnimation();
 	currPlayer = players[index];
 	currPlayer.container = currTab.getContentContainer();
-	
+
 	if (feed.ErrorMsg) {
 		currPlayer.container.innerHTML = "<i>Invalid data.</i>";
 		return;
 	}
-	// collect all images from feed
+
 	currPlayer.feed = feed;
 	currPlayer.length = feed.Entry.length;
 	for (var i = 0; i < currPlayer.length; i++) {
 		var m = feed.Entry[i].Summary.match(SUMMARY_RE);
 		currPlayer.imgS[i] = _IG_GetImage( m[1] );
-		currPlayer.imgB[i] = _IG_GetImage( m[1].replace(/\/([0-9]+)\.jpg/,'/b$1.jpg') );
-		currPlayer.imgS[i].alt = currPlayer.imgS[i].title = feed.Entry[i].Title;
+		currPlayer.imgB[i] = _IG_GetImage( m[1].replace(/\/([0-9]+)\.jpg/, '/b$1.jpg') );
+		currPlayer.imgS[i].alt = currPlayer.imgS[i].title = prefs.getMsg("zoom");
 		currPlayer.imgB[i].alt = currPlayer.imgB[i].title = feed.Entry[i].Title;
-		
 		currPlayer.imgS[i].onload = function(event) {
-			var img = event.currentTarget;
-			img.style.width = stretch(img.width, docWidth/2)+'px';
+			this.style.width = stretch(this.width, docWidth/2)+'px';
 		};
 		currPlayer.imgB[i].onload = function(event) {
-			var img = event.currentTarget;
-			img.style.width = stretch(img.width, docWidth)+'px';
+			this.style.width = stretch(this.width, docWidth)+'px';
 		};
 	}
-	if (currPlayer.bSlide)
-		ShowSlide(currPlayer.index);
-	else
-		ShowList();
+
+	if (currPlayer.bSlide) ShowSlide(currPlayer.index);
+	else ShowList();
 }
 
 function stretch(width, limit) {
 	if (width > limit) return stretch(width/2, limit);
 	return width;
 }
-
-function Reset() {
+function setStyle(obj, name) {
+	obj.setAttribute('class', name);
+	obj.className = name;
+}
+function resetAnimation() {
 	clearInterval(swapID);
 	clearInterval(currPlayer.playID);
 	currPlayer.playID = -1;
 }
 
 function createTitle() { return '<div align="center"><b>'+currPlayer.feed.Title+'</b></div>'; }
+
 function createDIV() {
 	var html = createTitle();
 	html += '<table border="0" align="center"><tr><td height="256px">';
-	html += '<div id="shadow" class="img-shadow"><div id="photo" class="img-div" align="center"><i>'+prefs.getMsg("loading")+'</i></div></div>';
+	html += '<div id="shadow" class="img-shadow"><div id="div" class="img-div">';
+	html += '<a id="link" target="_blank" href=""><img id="main" src="" /></a>';
+	html += '<div id="desc" class="desc"></div></div></div>';
 	html += '</td></tr></table>';
-	html += '<div id="control" align="center" class="control">';
+	html += '<div id="control" class="control">';
 	html += '<a href="javascript:ShowList();" id="list1"></a>';
-	html += '<a href="javascript:first();"><img src="http://diggirl-gadget.googlecode.com/svn/trunk/resultset_first.png"></a>';
-	html += '<a href="javascript:prev();"><img src="http://diggirl-gadget.googlecode.com/svn/trunk/resultset_previous.png"></a>';
-	html += '<a href="javascript:togglePlay();" id="play"><img src="http://diggirl-gadget.googlecode.com/svn/trunk/control_play_blue.png"></a>';
-	html += '<a href="javascript:next();"><img src="http://diggirl-gadget.googlecode.com/svn/trunk/resultset_next.png"></a>';
-	html += '<a href="javascript:last();"><img src="http://diggirl-gadget.googlecode.com/svn/trunk/resultset_last.png"></a>';
+	html += '<a href="javascript:first();"><img src="'+baseURL+'resultset_first.png" /></a>';
+	html += '<a href="javascript:prev();" ><img src="'+baseURL+'resultset_previous.png" /></a>';
+	html += '<a href="javascript:togglePlay();" id="play"><img src="'+baseURL+'control_play_blue.png" /></a>';
+	html += '<a href="javascript:next();"><img src="'+baseURL+'resultset_next.png" /></a>';
+	html += '<a href="javascript:last();"><img src="'+baseURL+'resultset_last.png" /></a>';
 	html += '<a href="javascript:ShowList();" id="list2"></a>';
 	html += '</div>';
 	return html;
 }
 
 function ShowSlide(index) {
-	Reset();
+	resetAnimation();
 	currPlayer.bSlide = true;
 	currPlayer.index = index;
 	currPlayer.container.innerHTML = createDIV();
 	_gel("list1").appendChild(listIcon.cloneNode(false));
 	_gel("list2").appendChild(listIcon.cloneNode(false));
+	
+	if (ie_mode) slide = _gel('main');
+	else slide = _gel('shadow');
+	SetOpacity(slide, 0);
+
 	swapImage();
 	if (currPlayer.bAuto) togglePlay();
 }
 
 function ShowList(index) {
-	Reset();
+	resetAnimation();
 	currPlayer.bSlide = false;
 	currPlayer.container.innerHTML = createTitle();
 
 	if (index == undefined) index = Math.floor(currPlayer.index / perPage);
 	ShowPages(index);
-	
+
 	for (var i = index*perPage; i < (index+1)*perPage; i++) {
-		var imgObj = currPlayer.imgS[i];
 		var entry = currPlayer.feed.Entry[i];
-		var ctrl = document.createElement("div");
-		ctrl.setAttribute('align', 'right');
-		ctrl.setAttribute('class', 'control');
-		
-		var info = document.createElement("div");
-		info.setAttribute('class', 'info');
-		info.innerHTML = entry.Title;
 
 		var zoomObj = document.createElement("a");
 		zoomObj.href = 'javascript:ShowSlide('+i+');';
-		zoomObj.appendChild(zoomIcon.cloneNode(false));
-		ctrl.appendChild(info);
-		ctrl.appendChild(zoomObj);
+		zoomObj.appendChild(currPlayer.imgS[i]);
 		
 		var aObj = document.createElement("a");
-		aObj.setAttribute('class', 'img-link');
 		aObj.href = entry.Link;
 		aObj.target = "_blank";
-		aObj.appendChild(imgObj);
+		aObj.innerHTML = entry.Title;
+		
+		var linkObj = document.createElement("div");
+		setStyle(linkObj, 'info');
+		linkObj.appendChild(aObj);
 
 		var imgDiv = document.createElement("div");
-		imgDiv.setAttribute('class', 'img-div');
-		imgDiv.setAttribute('align', 'center');
-		imgDiv.appendChild(aObj);
-		imgDiv.appendChild(ctrl);
+		setStyle(imgDiv, 'img-div');
+		imgDiv.appendChild(zoomObj);
+		imgDiv.appendChild(linkObj);
 
 		var photoDiv = document.createElement("div");
-		photoDiv.setAttribute('class', 'img-shadow');
+		setStyle(photoDiv, 'img-shadow');
 		photoDiv.appendChild(imgDiv);
 
 		currPlayer.container.appendChild(photoDiv);
 	}
+
 	_IG_AdjustIFrameHeight();
 }
 
@@ -292,8 +279,7 @@ function ShowPages(index) {
 	if (num < 2) return;
 
 	var panel = document.createElement("div");
-	panel.setAttribute('align', 'center');
-	panel.setAttribute('class', 'page');
+	setStyle(panel, 'control');
 
 	if (index > 0) {
 		var link = document.createElement("a");
@@ -324,40 +310,40 @@ function ShowPages(index) {
 	currPlayer.container.appendChild(panel);
 }
 
-function fadein(image) {
-	_IG_AdjustIFrameHeight();
-	SetOpacity(image, image.opacity + delta);
-	if (image.opacity == 1)
-		clearInterval(swapID);
+function SetOpacity(image, opacity) {
+	if (image == null) return;
+	if (opacity > 1) opacity = 1;
+	if (opacity > 0) image.style.visibility = "visible";
+	else {
+		opacity = 0;
+		image.style.visibility = "hidden";
+	}
+	if (ie_mode) image.style.filter = "alpha(opacity=" + opacity*100 + ")";
+	image.style.opacity = image.opacity = opacity;
 }
-function fadeout(image) {
-	SetOpacity(image, image.opacity - delta);
-	if (image.opacity == 0) {
+function fadein() {
+	SetOpacity(slide, slide.opacity + delta);
+	if (slide.opacity == 1) {
+		clearInterval(swapID);
+		_IG_AdjustIFrameHeight();
+	}
+}
+function fadeout() {
+	SetOpacity(slide, slide.opacity - delta);
+	if (slide.opacity == 0) {
 		clearInterval(swapID);
 		var imgObj = currPlayer.imgB[currPlayer.index];
 		var entry = currPlayer.feed.Entry[currPlayer.index];
-		var name = document.createElement("div");
-		name.setAttribute('class', 'desc');
-		name.innerHTML = entry.Title;
-		
-		var aObj = document.createElement("a");
-		aObj.setAttribute('class', 'img-link');
-		aObj.href = entry.Link;
-		aObj.target = "_blank";
-		aObj.appendChild(imgObj);
-		
-		var imgDiv = _gel('photo');
-		imgDiv.innerHTML = "";
-		imgDiv.appendChild(aObj);
-		imgDiv.appendChild(name);
-		swapID = setInterval(fadein, transit, image);
+		_gel('desc').innerHTML = entry.Title;
+		_gel('link').href = entry.Link;
+		_gel('main').src = imgObj.src;
+		swapID = setInterval(fadein, transit);
 	}
 }
 function swapImage() {
-	var imgPreload = new Image();
 	imgPreload.onload = function() {
 		clearInterval(swapID);
-		swapID = setInterval(fadeout, transit, _gel('shadow'));
+		swapID = setInterval(fadeout, transit);
 	};
 	imgPreload.src = currPlayer.imgB[currPlayer.index].src
 }
