@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Module>
+<ModulePrefs title="今天壹蘋果" 
+title_url="http://blog.1-apple.com.tw/BlogAPI/" 
+description="google gadget for 壹蘋果 Blog" 
+screenshot="http://phenix.yu.googlepages.com/1apple-screenshot.png" 
+thumbnail="http://phenix.yu.googlepages.com/1apple-thumbnail.png" 
+author="Phenix Yu" 
+author_email="phenix.yu+gadget@gmail.com" 
+author_affiliation="jbyu's lab." 
+author_location="Taiwan" >
+<Require feature="tabs"/>
+<Require feature="setprefs"/>
+<Require feature="dynamic-height"/>
+</ModulePrefs>
+<UserPref name="selectedTab" datatype="hidden" />
+<UserPref name="slide" display_name="幻燈片模式" datatype="bool" default_value="false" />
+<UserPref name="auto" display_name="自動播放" datatype="bool" default_value="false" />
+<UserPref name="count" display_name="相片數目" datatype="enum" default_value="30">
+	<EnumValue value="6" display_value="6"/>
+	<EnumValue value="12" display_value="12"/>
+	<EnumValue value="18" display_value="18"/>
+	<EnumValue value="24" display_value="24"/>
+	<EnumValue value="30" display_value="30"/>
+</UserPref>
+<UserPref name="interval" display_name="更新頻率" datatype="enum" default_value="5">
+	<EnumValue value="0" display_value="不更新"/>
+	<EnumValue value="5" display_value="5 秒"/>
+	<EnumValue value="10" display_value="10 秒"/>
+	<EnumValue value="30" display_value="30 秒"/>
+	<EnumValue value="60" display_value="1 分"/>
+	<EnumValue value="120" display_value="2 分"/>
+	<EnumValue value="300" display_value="5 分"/>
+</UserPref>
+<Content type="html">
+<![CDATA[
+<style type="text/css">
+/* from http://alistapart.com/articles/cssdropshadows */
+.img-shadow {
+	float:left;
+	background: url(http://diggirl-gadget.googlecode.com/svn/trunk/shadowAlpha.png) no-repeat bottom right !important;
+	background: url(http://diggirl-gadget.googlecode.com/svn/trunk/shadow.gif) no-repeat bottom right;
+	margin: 10px 0 0 10px;
+}
+.img-shadow .img-div {
+	position: relative;
+	top: -6px;
+	right: 6px;
+	background-color: #ffffff;
+	border: 1px solid #a9a9a9;
+	padding: 4px;
+	text-align: center;
+}
+a {
+	text-decoration: none;
+	color: #0000ff;
+}
+a:visited { color: #0000ff; }
+a:hover   { color: #ff0000; }
+
+.img-div a img {
+	vertical-align: bottom;
+	border: 1px solid #000000;
+}
+.img-div a:hover img {
+	border-color: #ff0000;
+}
+.control {
+	font-size: small;
+	text-align: center;
+}
+.control a img {
+	border: 1px solid transparent !important;
+	border: 1px solid #ffffff;
+	padding: 0 4px 0 4px;
+	vertical-align: bottom;
+}
+.control a:hover img {
+	background-color: #aaaaaa;
+	border-color: transparent !important;
+	border-color: #ff0000;
+}
+.info {
+	font-size: x-small;
+	text-align: center;
+	width: 108px;
+}
+.desc {
+	font-size: 	medium;
+	text-align: center;
+}
+</style>
+<script type="text/javascript">
+var tabs = new _IG_Tabs(__MODULE_ID__);
+var prefs= new _IG_Prefs(__MODULE_ID__);
+var SUMMARY_RE = /<img[^><]+src="([^">]+)"/i;
+var transit = 50;
+var delta = 0.1;
+var bSlide = prefs.getBool("slide");
+var bAuto = prefs.getBool("auto");
+var count = prefs.getInt("count");
+var perPage = 6;
+var interval = prefs.getInt("interval");
+var swapID = -1;
+var docWidth = document.width;
+var docHeight = document.height;
+var ie_mode = false;
+if (typeof window.ActiveXObject != "undefined") {
+	ie_mode = true;
+	docWidth = document.body.clientWidth;
+	docHeight = document.body.clientHeight;
+}
+function _MyPlayer(url, name) {
+	this.url  = url;
+	this.name = name;
+	this.index= 0;
+	this.length = 0;
+	this.bSlide = bSlide;
+	this.bAuto = bAuto;
+	this.playID = -1;
+	this.container = null;
+	this.feed = null;
+	this.imgS = new Array();
+	this.imgB = new Array();
+}
+var currPlayer = null;
+var players = new Array();
+players.push(new _MyPlayer("http://blog.1-apple.com.tw/dsp_RSS.cfm?BlogCode=beauty", "今天我最美"));
+players.push(new _MyPlayer("http://blog.1-apple.com.tw/dsp_RSS.cfm?BlogCode=look", "今天我最奶"));
+players.push(new _MyPlayer("http://blog.1-apple.com.tw/dsp_RSS.cfm?BlogCode=sharpq", "今天我最Q"));
+players.push(new _MyPlayer("http://blog.1-apple.com.tw/dsp_RSS.cfm?BlogCode=famous1", "今天我最MAN"));
+
+var slide = null;
+var imgPreload = new Image();
+var baseURL = "http://diggirl-gadget.googlecode.com/svn/trunk/";
+var playIcon = _IG_GetImage(baseURL+"control_play_blue.png");
+var stopIcon = _IG_GetImage(baseURL+"control_stop_blue.png");
+var prevIcon = _IG_GetImage(baseURL+"resultset_previous.png");
+var nextIcon = _IG_GetImage(baseURL+"resultset_next.png");
+var listIcon = _IG_GetImage(baseURL+"application_view_tile.png");
+listIcon.alt = listIcon.title = "列表模式";
+
+function Init() {
+	for (var i = 0; i < players.length; i++) {
+		tabs.addDynamicTab(players[i].name, GeneratorCB(players[i].url) );
+	}
+	currPlayer = players[tabs.getSelectedTab().getIndex()];
+}
+
+function GeneratorCB(url) { 
+	return function(tabId) { _IG_FetchFeedAsJSON(url, FeedCB, count, true); };
+}
+
+function FeedCB(feed) {
+	var currTab = tabs.getSelectedTab();
+	var index = currTab.getIndex();
+	resetAnimation();
+	currPlayer = players[index];
+	currPlayer.container = currTab.getContentContainer();
+
+	if (feed.ErrorMsg) {
+		currPlayer.container.innerHTML = "<i>Invalid data.</i>";
+		return;
+	}
+
+	currPlayer.feed = feed;
+	currPlayer.length = feed.Entry.length;
+	for (var i = 0; i < currPlayer.length; i++) {
+		var m = feed.Entry[i].Summary.match(SUMMARY_RE);
+		currPlayer.imgS[i] = _IG_GetImage( m[1].replace('PBig_','PSmall_') );
+		currPlayer.imgB[i] = _IG_GetImage( m[1].replace('PSmall_','PBig_') );
+		currPlayer.imgS[i].alt = currPlayer.imgS[i].title = "放大";
+		currPlayer.imgB[i].alt = currPlayer.imgB[i].title = feed.Entry[i].Title;
+		currPlayer.imgS[i].onload = function(event) {
+			this.style.width = stretch(this.width, docWidth/2)+'px';
+		};
+	}
+
+	if (currPlayer.bSlide) ShowSlide(currPlayer.index);
+	else ShowList();
+}
+
+function stretch(width, limit) {
+	if (width > limit) return stretch(width/2, limit);
+	return width;
+}
+function setStyle(obj, name) {
+	obj.setAttribute('class', name);
+	obj.className = name;
+}
+function resetAnimation() {
+	clearInterval(swapID);
+	clearInterval(currPlayer.playID);
+	currPlayer.playID = -1;
+}
+
+function createTitle() { return '<div align="center"><b>'+currPlayer.feed.Title+'</b></div>'; }
+
+function createDIV() {
+	var html = createTitle();
+	html += '<table border="0" align="center"><tr><td height="256px">';
+	html += '<div id="shadow" class="img-shadow"><div id="div" class="img-div">';
+	html += '<a id="link" target="_blank" href=""><img id="main" src="" /></a>';
+	html += '<div id="desc" class="desc"></div></div></div>';
+	html += '</td></tr></table>';
+	html += '<div id="control" class="control">';
+	html += '<a href="javascript:ShowList();" id="list1"></a>';
+	html += '<a href="javascript:first();"><img src="'+baseURL+'resultset_first.png" /></a>';
+	html += '<a href="javascript:prev();" ><img src="'+baseURL+'resultset_previous.png" /></a>';
+	html += '<a href="javascript:togglePlay();" id="play"><img src="'+baseURL+'control_play_blue.png" /></a>';
+	html += '<a href="javascript:next();"><img src="'+baseURL+'resultset_next.png" /></a>';
+	html += '<a href="javascript:last();"><img src="'+baseURL+'resultset_last.png" /></a>';
+	html += '<a href="javascript:ShowList();" id="list2"></a>';
+	html += '</div>';
+	return html;
+}
+
+function ShowSlide(index) {
+	resetAnimation();
+	currPlayer.bSlide = true;
+	currPlayer.index = index;
+	currPlayer.container.innerHTML = createDIV();
+	_gel("list1").appendChild(listIcon.cloneNode(false));
+	_gel("list2").appendChild(listIcon.cloneNode(false));
+
+	 _gel('main').onload = function(event) {
+		this.style.width = stretch(this.width, docWidth)+'px';
+	};
+	
+	if (ie_mode) slide = _gel('main');
+	else slide = _gel('shadow');
+	SetOpacity(slide, 0);
+		
+	swapImage();
+	if (currPlayer.bAuto) togglePlay();
+}
+
+function ShowList(index) {
+	resetAnimation();
+	currPlayer.bSlide = false;
+	currPlayer.container.innerHTML = createTitle();
+
+	if (index == undefined) index = Math.floor(currPlayer.index / perPage);
+	ShowPages(index);
+
+	for (var i = index*perPage; i < (index+1)*perPage; i++) {
+		var entry = currPlayer.feed.Entry[i];
+
+		var zoomObj = document.createElement("a");
+		zoomObj.href = 'javascript:ShowSlide('+i+');';
+		zoomObj.appendChild(currPlayer.imgS[i]);
+		
+		var aObj = document.createElement("a");
+		aObj.href = entry.Link;
+		aObj.target = "_blank";
+		aObj.innerHTML = entry.Title;
+
+		var linkObj = document.createElement("div");
+		setStyle(linkObj, 'info');
+		linkObj.appendChild(aObj);
+
+		var imgDiv = document.createElement("div");
+		setStyle(imgDiv, 'img-div');
+		imgDiv.appendChild(zoomObj);
+		imgDiv.appendChild(linkObj);
+
+		var photoDiv = document.createElement("div");
+		setStyle(photoDiv, 'img-shadow');
+		photoDiv.appendChild(imgDiv);
+
+		currPlayer.container.appendChild(photoDiv);
+	}
+
+	_IG_AdjustIFrameHeight();
+}
+
+function ShowPages(index) {
+	var num = count / perPage;
+	if (num < 2) return;
+
+	var panel = document.createElement("div");
+	setStyle(panel, 'control');
+
+	if (index > 0) {
+		var link = document.createElement("a");
+		link.href = 'javascript:ShowList('+(index-1)+');';
+		link.appendChild(prevIcon);
+		panel.appendChild(link);
+	}
+
+	for (i = 0; i < num; i++) {
+		if (i != index){
+			var link = document.createElement("a");
+			link.href = 'javascript:ShowList('+i+')';
+			link.innerHTML = "&nbsp;"+(i+1)+"&nbsp;";
+			panel.appendChild(link);
+		} else {
+			var link = document.createElement("b");
+			link.innerHTML = "&nbsp;"+(i+1)+"&nbsp;";
+			panel.appendChild(link);
+		}
+	}
+	
+	if (index+1 < num) {
+		var link = document.createElement("a");
+		link.href = 'javascript:ShowList('+(index+1)+');';
+		link.appendChild(nextIcon);
+		panel.appendChild(link);
+	}
+	currPlayer.container.appendChild(panel);
+}
+
+function SetOpacity(image, opacity) {
+	if (image == null) return;
+	if (opacity > 1) opacity = 1;
+	if (opacity > 0) image.style.visibility = "visible";
+	else {
+		opacity = 0;
+		image.style.visibility = "hidden";
+	}
+	if (ie_mode) image.style.filter = "alpha(opacity=" + opacity*100 + ")";
+	image.style.opacity = image.opacity = opacity;
+}
+function fadein() {
+	SetOpacity(slide, slide.opacity + delta);
+	if (slide.opacity == 1) {
+		clearInterval(swapID);
+		_IG_AdjustIFrameHeight();
+	}
+}
+function fadeout() {
+	SetOpacity(slide, slide.opacity - delta);
+	if (slide.opacity == 0) {
+		clearInterval(swapID);
+		var imgObj = currPlayer.imgB[currPlayer.index];
+		var entry = currPlayer.feed.Entry[currPlayer.index];
+		_gel('desc').innerHTML = entry.Title;
+		_gel('link').href = entry.Link;
+		_gel('main').src = imgObj.src;
+		swapID = setInterval(fadein, transit);
+	}
+}
+function swapImage() {
+	imgPreload.onload = function() {
+		clearInterval(swapID);
+		swapID = setInterval(fadeout, transit);
+	};
+	imgPreload.src = currPlayer.imgB[currPlayer.index].src
+}
+function first(){
+	currPlayer.index = 0;
+	swapImage();
+}
+function next() {
+	currPlayer.index++;
+	if (currPlayer.index == currPlayer.length){
+		currPlayer.index = 0;
+	}
+	swapImage();
+}
+function prev() {
+	currPlayer.index--;
+	if (currPlayer.index < 0) {
+		currPlayer.index = currPlayer.length - 1;
+	}
+	swapImage();
+}
+function last(){
+	currPlayer.index = currPlayer.length - 1;
+	swapImage();
+}
+function togglePlay() {
+	var state = _gel('play');
+	state.innerHTML='';
+	if (currPlayer.playID != -1) {
+		clearInterval(currPlayer.playID);
+		currPlayer.playID = -1;
+		state.appendChild(playIcon);
+	} else if (interval > 0) {
+		currPlayer.playID = setInterval( function(){next();}, interval*1000 );
+		state.appendChild(stopIcon);
+	} else {
+		state.appendChild(playIcon);
+	}
+}
+_IG_RegisterOnloadHandler(Init);
+</script>
+]]>
+</Content>
+</Module>
