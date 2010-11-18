@@ -1,0 +1,59 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Language" content="zh-TW" />
+<title>MuMu Maze</title>
+<style type="text/css">@import url(mg.css);</style>
+<script type="text/javascript" src="js/jquery-1.4.4.min.js"></script>
+<script type="text/javascript" src="js/jquery.hotkey.js"></script>
+<script type="text/javascript" src="js/mg.js"></script>
+<script type="text/javascript" src="js/msg.js"></script>
+</head>
+
+<body id="sansi-toy-mg">
+<div id="wrapper">
+	<h2>MuMu Maze</h2>
+	<div class="info">
+		<p>Rule: starting from the top left corner and finish at the bottom right corner.</p>
+		<p>Tip: You can use up/w, down/s, left/a and right/d arrow keys to control the movement.</p>
+	</div>
+	<div id="mg" class="mg"></div>
+	<div id="mg_set">
+		<strong>Setting</strong>
+		<P>
+		<input type="checkbox" onclick="mark(1, this);" id="mark1" />
+		<label for="mark1">Walking path will be marked in red.</label>
+		<br>
+		Width:<input type="text" id="mg_width" value="8" size="2" maxlength="2" /> 
+		Height:<input type="text" id="mg_height" value="8" size="2" maxlength="2" /> 
+		<input type="button" value=" Generate " onclick="new_mg();" />
+		</p>
+	</div>
+	<div id="project_info">
+		<strong>information:</strong>
+		<!--本游戏是<a href="http://code.google.com/p/sansi/" target="_blank">三思开源项目</a>的一部分，您可以<a href="http://code.google.com/p/sansi/downloads/list" target="_blank">点击这儿</a>下载相关文件。<br />-->
+		<a href="http://oldj.net/article/javascript-maze/" target="_blank">original work</a>
+	</div>
+</div>
+
+<script type="text/javascript">
+function mark(h, ob) {
+	mg.me.setMark(h, ob.checked);
+}
+
+function new_mg() {
+	var w = parseInt(document.getElementById("mg_width").value) || 8,
+		h = parseInt(document.getElementById("mg_height").value) || 8;
+	mg.set({width: w, height: h}).create().show();
+	document.getElementById("mg_width").value = w;
+	document.getElementById("mg_height").value = h;
+	mark(1, document.getElementById("mark1") );
+}
+
+var mg = new MG("mg");
+new_mg();
+
+</script>
+</body>
+</html>
