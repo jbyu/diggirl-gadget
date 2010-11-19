@@ -367,6 +367,24 @@ MG_Me.prototype = {
 		$.hotkeys.add("d", function () {_this.move(1);} );
 		$.hotkeys.add("s", function () {_this.move(2);} );
 		$.hotkeys.add("a", function () {_this.move(3);} );
+	// mouse control
+	$(mg.ob).mouseup( function(e) {
+		var parent = $(mg.ob).position();
+		var x = e.pageX - parent.left;
+		var y = e.pageY - parent.top;
+		var w = $(mg.me.ob).width();
+		var h = $(mg.me.ob).height();
+		var pos = $(mg.me.ob).position();
+		if (x > pos.left && x < (pos.left + w)) {
+			if ( y < pos.top ) mg.me.move(0);
+			else mg.me.move(2);
+		}
+		if (y > pos.top && y < pos.top + h) {
+			if ( x < pos.left ) mg.me.move(3);
+			else  mg.me.move(1);
+		}
+	});
+
 		setTimeout(function () {
 			if (_this.mg.is_moved) return;
 			_this.inform(SANSI_TOY_MSG.keyboard_hint);
