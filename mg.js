@@ -368,7 +368,7 @@ MG_Me.prototype = {
 		$.hotkeys.add("s", function () {_this.move(2);} );
 		$.hotkeys.add("a", function () {_this.move(3);} );
 	// mouse control
-	$(mg.ob).mouseup( function(e) {
+	$(document).mouseup( function(e) {
 		var parent = $(mg.ob).position();
 		var x = e.pageX - parent.left;
 		var y = e.pageY - parent.top;
